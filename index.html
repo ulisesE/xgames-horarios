@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pump It Up - Reservas</title>
+    <meta name="description" content="PWA para gestión de reservas de máquinas de baile">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f0f1b">
+
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="neon-text-magenta">X</span>
+                    <span class="neon-text-cyan">GAMES</span>
+                    <span class="neon-text-yellow">BARCADE</span>
+                </div>
+                <div class="header-actions">
+                    <span id="current-date" class="date-display"></span>
+                    <button id="zoom-btn" class="btn btn-outline" title="Comprimir Vista">🔍</button>
+                    <button id="install-btn" class="btn btn-outline" style="display: none;">Instalar App</button>
+                </div>
+            </div>
+
+            <div class="week-navigator" style="margin-top: 1rem; margin-bottom: 0;">
+                <button id="prev-week" class="icon-btn">&lt;</button>
+                <div id="week-days" class="week-days">
+                    <!-- Días generados dinámicamente -->
+                </div>
+                <button id="next-week" class="icon-btn">&gt;</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="schedule-container" id="schedule-container-main">
+                <div class="schedule-header">
+                    <div class="time-col-header">Hora</div>
+                    <div class="machine-header" data-machine="1">Máquina 1</div>
+                    <div class="machine-header" data-machine="2">Máquina 2</div>
+                    <div class="machine-header" data-machine="3">Máquina 3</div>
+                </div>
+                <div class="schedule-body" id="schedule-body">
+                    <!-- Filas generadas dinámicamente -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Reserva -->
+    <div id="booking-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Nueva Reserva</h2>
+                <button id="close-modal" class="icon-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="booking-form">
+                    <input type="hidden" id="booking-machine">
+                    <input type="hidden" id="booking-time">
+                    <input type="hidden" id="booking-date">
+                    <input type="hidden" id="booking-id">
+
+                    <div class="form-group">
+                        <label>Máquina</label>
+                        <div id="display-machine" class="info-text"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hora de Inicio</label>
+                        <div id="display-time" class="info-text"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customer-name">Nombre del Cliente</label>
+                        <input type="text" id="customer-name" required placeholder="Ej. Carlos G." autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="booking-duration">Duración</label>
+                        <select id="booking-duration" class="custom-select" required>
+                            <option value="30">30 Minutos</option>
+                            <option value="60">1 Hora</option>
+                            <option value="90">1 Hora y Media</option>
+                            <option value="120">2 Horas</option>
+                            <option value="150">2 Horas y Media</option>
+                            <option value="180">3 Horas</option>
+                            <option value="210">3 Horas y Media</option>
+                            <option value="240">4 Horas</option>
+                            <option value="300">5 Horas</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="delete-btn" class="btn btn-danger hidden">Eliminar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Reserva</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="./app.js"></script>
+</body>
+
+</html>
