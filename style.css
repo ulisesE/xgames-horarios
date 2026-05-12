@@ -626,48 +626,88 @@ input[type="text"]:focus {
     }
 }
 
-/* Vista Semanal */
-.schedule-row.weekly-row {
-    grid-template-columns: 60px repeat(7, 1fr);
-    min-height: 80px;
-    height: auto;
-}
-
-.day-cell {
+/* Vista Agenda Semanal */
+.agenda-view {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 4px;
-    position: relative;
-    border-right: 1px solid var(--border-color);
+    gap: 1.5rem;
+    padding: 1rem;
+    background-color: var(--bg-dark);
 }
 
-.day-cell:last-child {
-    border-right: none;
-}
-
-.weekly-booking-chip {
-    font-size: 0.7rem;
-    padding: 3px 5px;
-    border-radius: 4px;
-    white-space: nowrap;
+.agenda-day-card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
     overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--bg-dark);
-    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.agenda-day-header {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.agenda-bookings-list {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.agenda-empty-msg {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.agenda-item {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: transform 0.2s;
-    background: #fff;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.weekly-booking-chip:hover {
-    transform: scale(1.05);
-    z-index: 2;
-    position: relative;
+.agenda-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
-.weekly-booking-chip.machine-1 { background: var(--neon-magenta); }
-.weekly-booking-chip.machine-2 { background: var(--neon-cyan); }
-.weekly-booking-chip.machine-3 { background: var(--neon-yellow); }
+.agenda-time {
+    font-weight: 800;
+    color: white;
+    width: 100px;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+}
+
+.agenda-info {
+    flex: 1;
+    color: var(--text-main);
+    font-size: 1rem;
+}
+
+.agenda-duration {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.agenda-item.machine-1 { border-left: 4px solid var(--neon-magenta); }
+.agenda-item.machine-2 { border-left: 4px solid var(--neon-cyan); }
+.agenda-item.machine-3 { border-left: 4px solid var(--neon-yellow); }
+
+.agenda-item.machine-1 .agenda-info strong { color: var(--neon-magenta); }
+.agenda-item.machine-2 .agenda-info strong { color: var(--neon-cyan); }
+.agenda-item.machine-3 .agenda-info strong { color: var(--neon-yellow); }

@@ -139,6 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
         viewWeeklyBtn.classList.add('btn-outline');
         viewWeeklyBtn.classList.remove('btn-primary', 'active-view');
         dailyNavigator.style.display = 'flex';
+        document.querySelector('.schedule-header').style.display = 'grid';
+        scheduleBody.classList.remove('agenda-view');
         updateDateDisplay();
         renderWeekNav();
         generateDailyGrid();
@@ -152,6 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
         viewDailyBtn.classList.add('btn-outline');
         viewDailyBtn.classList.remove('btn-primary', 'active-view');
         dailyNavigator.style.display = 'none';
+        document.querySelector('.schedule-header').style.display = 'none';
+        scheduleBody.classList.add('agenda-view');
         updateDateDisplay();
         generateWeeklyGrid();
         renderBookings();
@@ -208,46 +212,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateWeeklyGrid() {
         scheduleBody.innerHTML = '';
-        const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        
-        const header = document.querySelector('.schedule-header');
-        header.style.gridTemplateColumns = '60px repeat(7, 1fr)';
-        
-        let headerHtml = `<div class="time-col-header" style="min-width: 60px;">Hora</div>`;
+        const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
         for (let i = 0; i < 7; i++) {
             const d = new Date(currentWeekStart);
             d.setDate(d.getDate() + i);
-            headerHtml += `<div class="machine-header" style="flex:1;">${dayNames[i]}<br>${d.getDate()}</div>`;
-        }
-        header.innerHTML = headerHtml;
-
-        for (let hour = 12; hour < 24; hour++) {
-            const timeStr = formatTime12(hour, '00');
+            const dateStr = formatDate(d);
             
-            const row = document.createElement('div');
-            row.className = 'schedule-row weekly-row';
+            const dayCard = document.createElement('div');
+            dayCard.className = 'agenda-day-card';
             
-            const timeCell = document.createElement('div');
-            timeCell.className = 'time-cell';
-            timeCell.style.minWidth = '60px';
-            timeCell.textContent = timeStr;
-            row.appendChild(timeCell);
-
-            for (let i = 0; i < 7; i++) {
-                const d = new Date(currentWeekStart);
-                d.setDate(d.getDate() + i);
-                const dateStr = formatDate(d);
-
-                const dayCell = document.createElement('div');
-                dayCell.className = 'machine-cell day-cell';
-                dayCell.style.flex = '1';
-                dayCell.dataset.date = dateStr;
-                dayCell.dataset.hour = hour;
-                
-                row.appendChild(dayCell);
-            }
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'agenda-day-header';
+            dayHeader.innerHTML = `📅 ${dayNames[d.getDay()]} ${d.getDate()}`;
             
-            scheduleBody.appendChild(row);
+            const bookingsList = document.createElement('div');
+            bookingsList.className = 'agenda-bookings-list';
+            bookingsList.id = `agenda-list-${dateStr}`;
+            
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'agenda-empty-msg';
+            emptyMsg.textContent = '(Sin reservas)';
+            bookingsList.appendChild(emptyMsg);
+            
+            dayCard.appendChild(dayHeader);
+            dayCard.appendChild(bookingsList);
+            scheduleBody.appendChild(dayCard);
         }
     }
 
@@ -294,27 +284,35 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const weeklyBookings = allBookings.filter(b => b.date >= startOfWeek && b.date <= endOfWeek);
             
+            weeklyBookings.sort((a, b) => {
+               const getMins = (t) => {
+                   let [time, modifier] = t.split(' ');
+                   let [hours, minutes] = time.split(':');
+                   if (hours === '12') hours = '0';
+                   if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+                   return parseInt(hours, 10) * 60 + parseInt(minutes, 10);
+               };
+               return getMins(a.time) - getMins(b.time);
+            });
+            
             weeklyBookings.forEach(booking => {
-                const isPM = booking.time.includes('PM');
-                const timeParts = booking.time.split(' ');
-                if(timeParts.length === 2) {
-                    let [h, m] = timeParts[0].split(':');
-                    let hourNum = parseInt(h);
-                    if (isPM && hourNum !== 12) hourNum += 12;
-                    if (!isPM && hourNum === 12) hourNum = 0;
+                const listContainer = document.getElementById(`agenda-list-${booking.date}`);
+                if (listContainer) {
+                    const emptyMsg = listContainer.querySelector('.agenda-empty-msg');
+                    if (emptyMsg) emptyMsg.remove();
                     
-                    const cellSelector = `.day-cell[data-date="${booking.date}"][data-hour="${hourNum}"]`;
-                    const cell = document.querySelector(cellSelector);
+                    const item = document.createElement('div');
+                    item.className = `agenda-item machine-${booking.machine}`;
+                    item.innerHTML = `
+                        <div class="agenda-time">🕒 ${booking.time}</div>
+                        <div class="agenda-info">
+                            <strong>[M${booking.machine}]</strong> ${booking.name} 
+                            <span class="agenda-duration">(${booking.duration} min)</span>
+                        </div>
+                    `;
                     
-                    if (cell) {
-                        const chip = document.createElement('div');
-                        chip.className = `weekly-booking-chip machine-${booking.machine}`;
-                        chip.innerHTML = `M${booking.machine}: ${booking.name}`;
-                        chip.title = `${booking.time} - ${booking.duration}m`;
-                        chip.style.cursor = 'default';
-                        
-                        cell.appendChild(chip);
-                    }
+                    item.style.cursor = 'default';
+                    listContainer.appendChild(item);
                 }
             });
         }
