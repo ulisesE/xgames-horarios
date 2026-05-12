@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pump It Up - Horarios (Solo Lectura)</title>
+    <meta name="theme-color" content="#0f0f1b">
+
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="neon-text-magenta">X</span>
+                    <span class="neon-text-cyan">GAMES</span>
+                    <span class="neon-text-yellow">BARCADE</span>
+                </div>
+                <div class="header-actions">
+                    <span id="current-date" class="date-display"></span>
+                    <button id="zoom-btn" class="btn btn-outline" title="Comprimir Vista">🔍</button>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 10px;">
+                <span style="background: var(--neon-cyan); color: var(--bg-dark); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">Vista de Cliente (Solo Lectura)</span>
+            </div>
+
+            <div class="view-controls" style="text-align: center; margin-top: 1rem;">
+                <button id="view-daily-btn" class="btn btn-primary active-view" style="padding: 5px 15px; margin-right: 10px;">Día</button>
+                <button id="view-weekly-btn" class="btn btn-outline" style="padding: 5px 15px;">Semana</button>
+            </div>
+
+            <div class="week-navigator" id="daily-navigator" style="margin-top: 1rem; margin-bottom: 0;">
+                <button id="prev-week" class="icon-btn">&lt;</button>
+                <div id="week-days" class="week-days">
+                    <!-- Días generados dinámicamente -->
+                </div>
+                <button id="next-week" class="icon-btn">&gt;</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="schedule-container" id="schedule-container-main">
+                <div class="schedule-header">
+                    <div class="time-col-header">Hora</div>
+                    <div class="machine-header" data-machine="1">Máquina 1</div>
+                    <div class="machine-header" data-machine="2">Máquina 2</div>
+                    <div class="machine-header" data-machine="3">Máquina 3</div>
+                </div>
+                <div class="schedule-body" id="schedule-body">
+                    <!-- Filas generadas dinámicamente -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="./cliente.js"></script>
+</body>
+
+</html>

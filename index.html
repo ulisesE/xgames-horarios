@@ -15,6 +15,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="./style.css">
+
+    <script>
+        // Simple password protection
+        if (sessionStorage.getItem('adminAuth') !== 'true') {
+            const pass = prompt('Ingrese la contraseña de administrador:');
+            if (pass === 'XGAMESROOT') {
+                sessionStorage.setItem('adminAuth', 'true');
+            } else {
+                alert('Contraseña incorrecta. Redirigiendo a vista de cliente...');
+                window.location.href = './cliente.html';
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -33,7 +46,16 @@
                 </div>
             </div>
 
-            <div class="week-navigator" style="margin-top: 1rem; margin-bottom: 0;">
+            <div style="text-align: center; margin-top: 10px;">
+                <span style="background: var(--neon-magenta); color: var(--bg-dark); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">Vista de Administrador</span>
+            </div>
+
+            <div class="view-controls" style="text-align: center; margin-top: 1rem;">
+                <button id="view-daily-btn" class="btn btn-primary active-view" style="padding: 5px 15px; margin-right: 10px;">Día</button>
+                <button id="view-weekly-btn" class="btn btn-outline" style="padding: 5px 15px;">Semana</button>
+            </div>
+
+            <div class="week-navigator" id="daily-navigator" style="margin-top: 1rem; margin-bottom: 0;">
                 <button id="prev-week" class="icon-btn">&lt;</button>
                 <div id="week-days" class="week-days">
                     <!-- Días generados dinámicamente -->
@@ -110,7 +132,7 @@
         </div>
     </div>
 
-    <script src="./app.js"></script>
+    <script type="module" src="./app.js"></script>
 </body>
 
 </html>

@@ -1,7 +1,7 @@
-import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from './firebase-config.js';
+import { db, collection, onSnapshot } from './firebase-config.js';
 
 /**
- * Data Storage Service (Firebase)
+ * Data Storage Service (Firebase - Solo Lectura)
  */
 const StorageService = {
     collectionName: 'bookings',
@@ -20,31 +20,11 @@ const StorageService = {
 
     async getBookings() {
         return this.bookingsCache;
-    },
-
-    async saveBooking(booking) {
-        if (booking.id) {
-            const bookingRef = doc(db, this.collectionName, booking.id);
-            const dataToUpdate = { ...booking };
-            delete dataToUpdate.id;
-            await updateDoc(bookingRef, dataToUpdate);
-            return booking;
-        } else {
-            const dataToSave = { ...booking };
-            delete dataToSave.id;
-            const docRef = await addDoc(collection(db, this.collectionName), dataToSave);
-            booking.id = docRef.id;
-            return booking;
-        }
-    },
-
-    async deleteBooking(id) {
-        await deleteDoc(doc(db, this.collectionName, id));
     }
 };
 
 /**
- * Lógica de la Interfaz de Usuario
+ * Lógica de la Interfaz de Usuario (Cliente)
  */
 document.addEventListener('DOMContentLoaded', () => {
     const scheduleBody = document.getElementById('schedule-body');
@@ -60,19 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewDailyBtn = document.getElementById('view-daily-btn');
     const viewWeeklyBtn = document.getElementById('view-weekly-btn');
     let currentView = 'daily'; // 'daily' or 'weekly'
-    
-    // Modal elements
-    const modalOverlay = document.getElementById('booking-modal');
-    const closeModalBtn = document.getElementById('close-modal');
-    const bookingForm = document.getElementById('booking-form');
-    const displayMachine = document.getElementById('display-machine');
-    const displayTime = document.getElementById('display-time');
-    const inputMachine = document.getElementById('booking-machine');
-    const inputTime = document.getElementById('booking-time');
-    const inputDate = document.getElementById('booking-date');
-    const inputId = document.getElementById('booking-id');
-    const inputName = document.getElementById('customer-name');
-    const deleteBtn = document.getElementById('delete-btn');
 
     // Estado de Fechas
     let selectedDate = new Date();
@@ -88,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getStartOfWeek(date) {
         const d = new Date(date);
-        const day = d.getDay() || 7; // Lunes es 1, Domingo es 7
+        const day = d.getDay() || 7;
         d.setDate(d.getDate() - day + 1);
         d.setHours(0,0,0,0);
         return d;
@@ -137,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
     prevWeekBtn.addEventListener('click', () => {
         currentWeekStart.setDate(currentWeekStart.getDate() - 7);
         if (currentView === 'daily') {
-            // Seleccionar el mismo día de la semana anterior
             selectedDate.setDate(selectedDate.getDate() - 7);
             renderWeekNav();
         } else {
@@ -150,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     nextWeekBtn.addEventListener('click', () => {
         currentWeekStart.setDate(currentWeekStart.getDate() + 7);
         if (currentView === 'daily') {
-            // Seleccionar el mismo día de la semana siguiente
             selectedDate.setDate(selectedDate.getDate() + 7);
             renderWeekNav();
         } else {
@@ -167,7 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
         zoomBtn.title = isCompact ? 'Expandir Vista' : 'Comprimir Vista';
     });
 
-    // Cambiar Vista
     viewDailyBtn.addEventListener('click', () => {
         currentView = 'daily';
         viewDailyBtn.classList.add('btn-primary', 'active-view');
@@ -199,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${h}:${min} ${ampm}`;
     }
 
-    // Generar Grid Diario (12 a 23:30)
     function generateDailyGrid() {
         scheduleBody.innerHTML = '';
         const header = document.querySelector('.schedule-header');
@@ -223,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 timeCell.textContent = timeStr;
                 row.appendChild(timeCell);
 
-                // 3 Máquinas
                 for (let m = 1; m <= 3; m++) {
                     const machineCell = document.createElement('div');
                     machineCell.className = 'machine-cell';
@@ -233,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const cellContent = document.createElement('div');
                     cellContent.className = 'cell-content empty';
-                    cellContent.addEventListener('click', () => openModal(m, timeStr, formatDate(selectedDate)));
+                    cellContent.style.cursor = 'default';
                     
                     machineCell.appendChild(cellContent);
                     row.appendChild(machineCell);
@@ -244,7 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Generar Grid Semanal (7 Días, por hora)
     function generateWeeklyGrid() {
         scheduleBody.innerHTML = '';
         const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -283,10 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayCell.dataset.date = dateStr;
                 dayCell.dataset.hour = hour;
                 
-                dayCell.addEventListener('click', () => {
-                    openModal(1, timeStr, dateStr);
-                });
-                
                 row.appendChild(dayCell);
             }
             
@@ -303,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renderBookings() {
-        // Limpiar reservas
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
         document.querySelectorAll('.weekly-booking-chip').forEach(el => el.remove());
         
@@ -313,8 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const bookings = allBookings.filter(b => b.date === formatDate(selectedDate));
             
             bookings.forEach(booking => {
-                // Ensure legacy times work or match 12-hour format properly.
-                // Assuming data will be saved with 12-hour format moving forward.
                 const cellSelector = `.machine-cell[data-machine="${booking.machine}"][data-time="${booking.time}"]`;
                 const cell = document.querySelector(cellSelector);
                 
@@ -322,22 +276,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const block = document.createElement('div');
                     block.className = `booking-block machine-${booking.machine}`;
                     block.style.cssText = getBlockStyle(booking.duration);
+                    block.style.cursor = 'default';
                     
                     block.innerHTML = `
                         <div class="booking-name">${booking.name}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
-                    block.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        openModal(booking.machine, booking.time, booking.date, booking);
-                    });
-
                     cell.appendChild(block);
                 }
             });
         } else {
-            // Weekly View
             const startOfWeek = formatDate(currentWeekStart);
             const endOfWeekDate = new Date(currentWeekStart);
             endOfWeekDate.setDate(endOfWeekDate.getDate() + 6);
@@ -346,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const weeklyBookings = allBookings.filter(b => b.date >= startOfWeek && b.date <= endOfWeek);
             
             weeklyBookings.forEach(booking => {
-                // Extract hour from format "1:30 PM"
                 const isPM = booking.time.includes('PM');
                 const timeParts = booking.time.split(' ');
                 if(timeParts.length === 2) {
@@ -363,11 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         chip.className = `weekly-booking-chip machine-${booking.machine}`;
                         chip.innerHTML = `M${booking.machine}: ${booking.name}`;
                         chip.title = `${booking.time} - ${booking.duration}m`;
-                        
-                        chip.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            openModal(booking.machine, booking.time, booking.date, booking);
-                        });
+                        chip.style.cursor = 'default';
                         
                         cell.appendChild(chip);
                     }
@@ -376,133 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Modal Handlers
-    function openModal(machine, time, date, existingBooking = null) {
-        inputMachine.value = machine;
-        inputTime.value = time;
-        inputDate.value = date;
-        
-        displayMachine.textContent = `Máquina ${machine}`;
-        displayMachine.className = `info-text neon-text-${machine == 1 ? 'magenta' : machine == 2 ? 'cyan' : 'yellow'}`;
-        displayTime.textContent = time + ' | ' + date;
-
-        if (existingBooking) {
-            inputId.value = existingBooking.id;
-            inputName.value = existingBooking.name;
-            inputMachine.value = existingBooking.machine; // Just in case it's different from the column clicked
-            document.getElementById('booking-duration').value = existingBooking.duration;
-            deleteBtn.classList.remove('hidden');
-            
-            // Allow changing machine when editing
-            displayMachine.innerHTML = `
-                <select id="edit-machine-select" class="custom-select" style="margin-top:5px; padding: 5px;">
-                    <option value="1" ${existingBooking.machine == 1 ? 'selected' : ''}>Máquina 1</option>
-                    <option value="2" ${existingBooking.machine == 2 ? 'selected' : ''}>Máquina 2</option>
-                    <option value="3" ${existingBooking.machine == 3 ? 'selected' : ''}>Máquina 3</option>
-                </select>
-            `;
-            document.getElementById('edit-machine-select').addEventListener('change', (e) => {
-                inputMachine.value = e.target.value;
-            });
-
-        } else {
-            inputId.value = '';
-            inputName.value = '';
-            document.getElementById('booking-duration').value = '30';
-            deleteBtn.classList.add('hidden');
-            
-            // Allow changing machine when creating from weekly view
-            if (currentView === 'weekly') {
-                displayMachine.innerHTML = `
-                    <select id="create-machine-select" class="custom-select" style="margin-top:5px; padding: 5px;">
-                        <option value="1" ${machine == 1 ? 'selected' : ''}>Máquina 1</option>
-                        <option value="2" ${machine == 2 ? 'selected' : ''}>Máquina 2</option>
-                        <option value="3" ${machine == 3 ? 'selected' : ''}>Máquina 3</option>
-                    </select>
-                `;
-                document.getElementById('create-machine-select').addEventListener('change', (e) => {
-                    inputMachine.value = e.target.value;
-                });
-            }
-        }
-
-        modalOverlay.classList.remove('hidden');
-        setTimeout(() => inputName.focus(), 100);
-    }
-
-    function closeModal() {
-        modalOverlay.classList.add('hidden');
-    }
-
-    closeModalBtn.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
-    });
-
-    // Form Submit
-    bookingForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const duration = document.getElementById('booking-duration').value;
-        
-        const booking = {
-            id: inputId.value || undefined,
-            machine: inputMachine.value,
-            time: inputTime.value,
-            date: inputDate.value,
-            name: inputName.value,
-            duration: parseInt(duration)
-        };
-
-        await StorageService.saveBooking(booking);
-        closeModal();
-    });
-
-    // Botón Eliminar
-    deleteBtn.addEventListener('click', async () => {
-        if (confirm('¿Estás seguro de que deseas eliminar esta reserva?')) {
-            await StorageService.deleteBooking(inputId.value);
-            closeModal();
-        }
-    });
-
-    // Inicializar app
     updateDateDisplay();
     renderWeekNav();
     generateDailyGrid();
     
-    // Conectar a Firebase y renderizar
     StorageService.initRealtimeUpdates(() => {
         renderBookings();
     });
-    
-    initPWA();
 });
-
-// PWA Install Logic
-let deferredPrompt;
-function initPWA() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-            .catch(err => console.log('Error SW:', err));
-    }
-
-    const installBtn = document.getElementById('install-btn');
-    if(installBtn) {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'block';
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBtn.style.display = 'none';
-                }
-                deferredPrompt = null;
-            }
-        });
-    }
-}
