@@ -1,7 +1,6 @@
 // Importa las funciones que necesitas de los SDKs que usarás
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, getDocs, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-storage.js";
 
 // Tu configuración de Firebase para la aplicación web
 const firebaseConfig = {
@@ -17,7 +16,6 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 // Exportar la base de datos y las funciones de Firestore y Storage
-export { db, storage, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, getDocs, setDoc, getDoc, ref, uploadBytes, getDownloadURL };
+export { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, getDocs, setDoc, getDoc };

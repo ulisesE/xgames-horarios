@@ -1,4 +1,4 @@
-import { db, storage, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, setDoc, ref, uploadBytes, getDownloadURL } from './firebase-config.js';
+import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, setDoc } from './firebase-config.js';
 
 /**
  * Settings Service
@@ -32,16 +32,7 @@ const SettingsService = {
     }
 };
 
-/**
- * Image Service
- */
-const ImageService = {
-    async uploadImage(file, path) {
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        return await getDownloadURL(storageRef);
-    }
-};
+
 
 /**
  * Data Storage Service (Firebase)
@@ -559,13 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Llenar formulario con datos actuales
         document.getElementById('settings-motd').value = SettingsService.settings.motd || '';
         
-        if (SettingsService.settings.logo) {
-            logoPreview.src = SettingsService.settings.logo;
-            logoPreview.style.display = 'block';
-        } else {
-            logoPreview.style.display = 'none';
-        }
-        document.getElementById('settings-logo-file').value = '';
+        document.getElementById('settings-logo-url').value = SettingsService.settings.logo || '';
         
         renderMachinesListForSettings();
         settingsModal.classList.remove('hidden');
@@ -594,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <img class="machine-img-preview" src="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; display: none;">
-                <input type="file" class="machine-file-input" accept="image/*" style="font-size: 0.8rem;">
+                <input type="url" class="machine-url-input" placeholder="URL de la imagen" style="flex:1; padding:0.5rem; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; border-radius:4px; font-size:0.8rem;">
             </div>
             <hr style="margin: 10px 0; border-color: #333;">
         `;
@@ -602,16 +587,10 @@ document.addEventListener('DOMContentLoaded', () => {
         container.querySelector('.delete-machine-btn').addEventListener('click', () => container.remove());
         
         // Preview local
-        container.querySelector('.machine-file-input').addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = container.querySelector('.machine-img-preview');
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                };
-                reader.readAsDataURL(this.files[0]);
-            }
+        container.querySelector('.machine-url-input').addEventListener('input', function() {
+            const img = container.querySelector('.machine-img-preview');
+            img.src = this.value;
+            img.style.display = this.value ? 'block' : 'none';
         });
 
         machinesListContainer.appendChild(container);
@@ -633,23 +612,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <img class="machine-img-preview" src="${m.image || ''}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; ${m.image ? 'display:block;' : 'display:none;'}">
-                    <input type="file" class="machine-file-input" accept="image/*" style="font-size: 0.8rem;">
+                    <input type="url" class="machine-url-input" placeholder="URL de la imagen" value="${m.image || ''}" style="flex:1; padding:0.5rem; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; border-radius:4px; font-size:0.8rem;">
                 </div>
                 <hr style="margin: 10px 0; border-color: #333;">
             `;
             
             container.querySelector('.delete-machine-btn').addEventListener('click', () => container.remove());
             
-            container.querySelector('.machine-file-input').addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = container.querySelector('.machine-img-preview');
-                        img.src = e.target.result;
-                        img.style.display = 'block';
-                    };
-                    reader.readAsDataURL(this.files[0]);
-                }
+            container.querySelector('.machine-url-input').addEventListener('input', function() {
+                const img = container.querySelector('.machine-img-preview');
+                img.src = this.value;
+                img.style.display = this.value ? 'block' : 'none';
             });
 
             machinesListContainer.appendChild(container);
@@ -664,12 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
 
         try {
-            let newLogoUrl = SettingsService.settings.logo;
-            const logoFile = document.getElementById('settings-logo-file').files[0];
-            if (logoFile) {
-                newLogoUrl = await ImageService.uploadImage(logoFile, `logos/logo_${Date.now()}`);
-            }
-
+            const newLogoUrl = document.getElementById('settings-logo-url').value.trim();
             const newMotd = document.getElementById('settings-motd').value;
             
             // Recopilar máquinas
@@ -679,12 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let item of machineItems) {
                 const id = item.dataset.id;
                 const name = item.querySelector('.machine-name-input').value || `Máquina`;
-                let imageUrl = item.dataset.currentImg || '';
-                
-                const fileInput = item.querySelector('.machine-file-input');
-                if (fileInput.files && fileInput.files[0]) {
-                    imageUrl = await ImageService.uploadImage(fileInput.files[0], `machines/m_${id}_${Date.now()}`);
-                }
+                const imageUrl = item.querySelector('.machine-url-input').value.trim() || '';
                 
                 newMachines.push({ id, name, image: imageUrl });
             }
