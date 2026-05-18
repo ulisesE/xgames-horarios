@@ -1,4 +1,4 @@
-import { db, collection, onSnapshot, doc } from './firebase-config.js';
+import { db, collection, onSnapshot, doc, getDoc, setDoc, addDoc } from './firebase-config.js';
 
 /**
  * Settings Service
@@ -22,7 +22,7 @@ const SettingsService = {
 };
 
 /**
- * Data Storage Service (Firebase - Solo Lectura)
+ * Data Storage Service (Firebase - Cliente)
  */
 const StorageService = {
     collectionName: 'bookings',
@@ -41,6 +41,57 @@ const StorageService = {
 
     async getBookings() {
         return this.bookingsCache;
+    },
+
+    async saveBooking(booking) {
+        const dataToSave = { ...booking };
+        if (dataToSave.id) delete dataToSave.id;
+        
+        const docRef = await addDoc(collection(db, this.collectionName), dataToSave);
+        booking.id = docRef.id;
+        return booking;
+    }
+};
+
+/**
+ * Auth Service (Simple PIN Auth)
+ */
+const AuthService = {
+    currentUser: null,
+
+    init() {
+        const stored = localStorage.getItem('piu_client_user');
+        if (stored) {
+            this.currentUser = JSON.parse(stored);
+        }
+    },
+
+    async loginOrRegister(username, pin) {
+        const userRef = doc(db, 'users', username.toLowerCase());
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+            // Check PIN
+            if (userSnap.data().pin === pin) {
+                this.currentUser = { username: userSnap.data().username };
+                localStorage.setItem('piu_client_user', JSON.stringify(this.currentUser));
+                return true;
+            } else {
+                return false; // Wrong PIN
+            }
+        } else {
+            // Register
+            const newUser = { username, pin };
+            await setDoc(userRef, newUser);
+            this.currentUser = { username };
+            localStorage.setItem('piu_client_user', JSON.stringify(this.currentUser));
+            return true;
+        }
+    },
+
+    logout() {
+        this.currentUser = null;
+        localStorage.removeItem('piu_client_user');
     }
 };
 
@@ -48,6 +99,8 @@ const StorageService = {
  * Lógica de la Interfaz de Usuario (Cliente)
  */
 document.addEventListener('DOMContentLoaded', () => {
+    AuthService.init();
+
     const scheduleBody = document.getElementById('schedule-body');
     const currentDateEl = document.getElementById('current-date');
     const weekDaysContainer = document.getElementById('week-days');
@@ -71,9 +124,78 @@ document.addEventListener('DOMContentLoaded', () => {
     const motdOkBtn = document.getElementById('motd-ok-btn');
     const closeMotdBtn = document.getElementById('close-motd-btn');
 
+    // Auth UI
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userDisplay = document.getElementById('user-display');
+    const loginModal = document.getElementById('login-modal');
+    const closeLoginBtn = document.getElementById('close-login-btn');
+    const loginForm = document.getElementById('login-form');
+    const loginUsername = document.getElementById('login-username');
+    const loginPin = document.getElementById('login-pin');
+
+    // Booking Request UI
+    const clientBookingModal = document.getElementById('client-booking-modal');
+    const closeClientBookingBtn = document.getElementById('close-client-booking-btn');
+    const cancelClientBookingBtn = document.getElementById('cancel-client-booking-btn');
+    const clientBookingForm = document.getElementById('client-booking-form');
+    const clientMachine = document.getElementById('client-booking-machine');
+    const clientTime = document.getElementById('client-booking-time');
+    const clientDate = document.getElementById('client-booking-date');
+    const clientDisplayMachine = document.getElementById('client-display-machine');
+    const clientDisplayTime = document.getElementById('client-display-time');
+
     // Estado de Fechas
     let selectedDate = new Date();
     let currentWeekStart = getStartOfWeek(new Date());
+
+    // Update Auth UI
+    function updateAuthUI() {
+        if (AuthService.currentUser) {
+            loginBtn.classList.add('hidden');
+            logoutBtn.classList.remove('hidden');
+            userDisplay.classList.remove('hidden');
+            userDisplay.textContent = `Hola, ${AuthService.currentUser.username}`;
+        } else {
+            loginBtn.classList.remove('hidden');
+            logoutBtn.classList.add('hidden');
+            userDisplay.classList.add('hidden');
+            userDisplay.textContent = '';
+        }
+    }
+    updateAuthUI();
+
+    loginBtn.addEventListener('click', () => {
+        loginModal.classList.remove('hidden');
+        setTimeout(() => loginUsername.focus(), 100);
+    });
+
+    closeLoginBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
+    
+    logoutBtn.addEventListener('click', () => {
+        AuthService.logout();
+        updateAuthUI();
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = loginUsername.value.trim();
+        const pin = loginPin.value.trim();
+        
+        if (username.length < 3) {
+            alert('El usuario debe tener al menos 3 letras.');
+            return;
+        }
+
+        const success = await AuthService.loginOrRegister(username, pin);
+        if (success) {
+            updateAuthUI();
+            loginModal.classList.add('hidden');
+            loginForm.reset();
+        } else {
+            alert('PIN incorrecto para este usuario. Si eres nuevo, elige otro nombre.');
+        }
+    });
 
     function formatDate(date) {
         const d = new Date(date);
@@ -197,9 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${h}:${min} ${ampm}`;
     }
 
-    // Actualiza UI desde Ajustes
     function updateUIFromSettings() {
-        // Logo
         if (SettingsService.settings.logo) {
             headerLogo.innerHTML = `<img src="${SettingsService.settings.logo}" alt="Logo" style="max-height: 40px;">`;
         } else {
@@ -210,13 +330,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
         
-        // MOTD (Mensaje del Día)
         if (SettingsService.settings.motd && !sessionStorage.getItem('motd_seen')) {
             motdText.textContent = SettingsService.settings.motd;
             motdModal.classList.remove('hidden');
         }
 
-        // Refrescar grilla si estamos en daily
         if (currentView === 'daily') {
             generateDailyGrid();
         }
@@ -230,8 +348,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
     motdOkBtn.addEventListener('click', closeMotd);
     closeMotdBtn.addEventListener('click', closeMotd);
-    motdModal.addEventListener('click', (e) => {
-        if (e.target === motdModal) closeMotd();
+
+    function getMachineName(id) {
+        const machines = SettingsService.settings.machines || [];
+        const m = machines.find(x => x.id == id);
+        return m ? m.name : `Máquina ${id}`;
+    }
+
+    // Modal Request Booking
+    function openBookingRequest(machineId, time, date) {
+        if (!AuthService.currentUser) {
+            loginModal.classList.remove('hidden');
+            return;
+        }
+
+        clientMachine.value = machineId;
+        clientTime.value = time;
+        clientDate.value = date;
+
+        const mName = getMachineName(machineId);
+        clientDisplayMachine.innerHTML = `<div class="info-text neon-text-cyan">${mName}</div>`;
+        clientDisplayTime.textContent = time + ' | ' + date;
+
+        clientBookingModal.classList.remove('hidden');
+    }
+
+    closeClientBookingBtn.addEventListener('click', () => clientBookingModal.classList.add('hidden'));
+    cancelClientBookingBtn.addEventListener('click', () => clientBookingModal.classList.add('hidden'));
+
+    clientBookingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const btn = clientBookingForm.querySelector('button[type="submit"]');
+        const origText = btn.textContent;
+        btn.textContent = 'Enviando...';
+        btn.disabled = true;
+
+        const duration = document.getElementById('client-booking-duration').value;
+        const booking = {
+            machine: clientMachine.value,
+            time: clientTime.value,
+            date: clientDate.value,
+            name: AuthService.currentUser.username, // Usa el nombre logueado
+            duration: parseInt(duration),
+            status: 'pending', // ESTADO PENDIENTE
+            userId: AuthService.currentUser.username
+        };
+
+        try {
+            await StorageService.saveBooking(booking);
+            alert('¡Tu solicitud ha sido enviada! Espera a que el administrador la apruebe.');
+            clientBookingModal.classList.add('hidden');
+            clientBookingForm.reset();
+        } catch (error) {
+            console.error("Error saving booking", error);
+            alert("Error al guardar la solicitud.");
+        } finally {
+            btn.textContent = origText;
+            btn.disabled = false;
+        }
     });
 
     function generateDailyGrid() {
@@ -241,10 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const machines = SettingsService.settings.machines || [];
         const cols = machines.length;
         
-        // Ajustar columnas dinámicamente
         header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
-        
-        // Reconstruir cabecera
         header.innerHTML = `<div class="time-col-header">Hora</div>`;
         machines.forEach((m) => {
             const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
@@ -278,7 +450,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const cellContent = document.createElement('div');
                     cellContent.className = 'cell-content empty';
-                    cellContent.style.cursor = 'default';
+                    
+                    // Al hacer click en celda vacía, abrimos solicitud (o login)
+                    cellContent.addEventListener('click', () => {
+                        openBookingRequest(m.id, timeStr, formatDate(selectedDate));
+                    });
                     
                     machineCell.appendChild(cellContent);
                     row.appendChild(machineCell);
@@ -327,12 +503,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return 'height: calc(100% - 4px);'; // 30 mins
     }
-    
-    function getMachineName(id) {
-        const machines = SettingsService.settings.machines || [];
-        const m = machines.find(x => x.id == id);
-        return m ? m.name : `Máquina ${id}`;
-    }
 
     async function renderBookings() {
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
@@ -351,6 +521,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const block = document.createElement('div');
                     const colorIndex = (parseInt(booking.machine) % 3) || 3;
                     block.className = `booking-block machine-${colorIndex}`;
+                    
+                    if (booking.status === 'pending') {
+                        block.classList.add('booking-pending');
+                    } else if (booking.status === 'rejected') {
+                        block.classList.add('booking-rejected');
+                        // Opcional: no renderizar las rechazadas
+                        // return; 
+                    }
+
                     block.style.cssText = getBlockStyle(booking.duration);
                     block.style.cursor = 'default';
                     
@@ -391,6 +570,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const colorIndex = (parseInt(booking.machine) % 3) || 3;
                     item.className = `agenda-item machine-${colorIndex}`;
                     
+                    if (booking.status === 'pending') {
+                        item.classList.add('pending-agenda');
+                    } else if (booking.status === 'rejected') {
+                        item.classList.add('rejected-agenda');
+                    }
+
                     const mName = getMachineName(booking.machine);
                     
                     item.innerHTML = `

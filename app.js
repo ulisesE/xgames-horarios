@@ -7,11 +7,7 @@ const SettingsService = {
     settings: {
         logo: '',
         motd: '',
-        machines: [
-            { id: '1', name: 'Máquina 1', image: '' },
-            { id: '2', name: 'Máquina 2', image: '' },
-            { id: '3', name: 'Máquina 3', image: '' }
-        ]
+        machines: []
     },
     
     initRealtimeUpdates(callback) {
@@ -31,8 +27,6 @@ const SettingsService = {
         await setDoc(doc(db, 'settings', 'global'), newSettings);
     }
 };
-
-
 
 /**
  * Data Storage Service (Firebase)
@@ -107,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputId = document.getElementById('booking-id');
     const inputName = document.getElementById('customer-name');
     const deleteBtn = document.getElementById('delete-btn');
+    const approveBtn = document.getElementById('approve-btn');
+    const rejectBtn = document.getElementById('reject-btn');
+    const saveBookingBtn = document.getElementById('save-booking-btn');
 
     // Settings Modal elements
     const settingsBtn = document.getElementById('settings-btn');
@@ -116,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsForm = document.getElementById('settings-form');
     const addMachineBtn = document.getElementById('add-machine-btn');
     const machinesListContainer = document.getElementById('machines-list-container');
-    const logoPreview = document.getElementById('preview-logo');
     
     // Header Logo element
     const headerLogo = document.querySelector('.logo');
@@ -247,9 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${h}:${min} ${ampm}`;
     }
 
-    // Actualiza Logo y Cabeceras
     function updateUIFromSettings() {
-        // Logo
         if (SettingsService.settings.logo) {
             headerLogo.innerHTML = `<img src="${SettingsService.settings.logo}" alt="Logo" style="max-height: 40px;">`;
         } else {
@@ -260,14 +254,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
         
-        // Refrescar grilla si estamos en daily
         if (currentView === 'daily') {
             generateDailyGrid();
         }
         renderBookings();
     }
 
-    // Generar Grid Diario (12 a 23:30)
     function generateDailyGrid() {
         scheduleBody.innerHTML = '';
         const header = document.getElementById('schedule-header');
@@ -275,10 +267,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const machines = SettingsService.settings.machines || [];
         const cols = machines.length;
         
-        // Ajustar columnas dinámicamente
         header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
         
-        // Reconstruir cabecera
         header.innerHTML = `<div class="time-col-header">Hora</div>`;
         machines.forEach((m, index) => {
             const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
@@ -296,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const row = document.createElement('div');
                 row.className = 'schedule-row';
-                // La fila también debe tener las columnas dinámicas
                 row.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
                 
                 const timeCell = document.createElement('div');
@@ -304,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 timeCell.textContent = timeStr;
                 row.appendChild(timeCell);
 
-                // N Máquinas
                 machines.forEach(m => {
                     const machineCell = document.createElement('div');
                     machineCell.className = 'machine-cell';
@@ -325,7 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Generar Grid Semanal (Agenda)
     function generateWeeklyGrid() {
         scheduleBody.innerHTML = '';
         const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -385,9 +372,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (cell) {
                     const block = document.createElement('div');
-                    // Usar un color por defecto o ciclar entre los 3 colores neón si hay muchas
                     const colorIndex = (parseInt(booking.machine) % 3) || 3;
                     block.className = `booking-block machine-${colorIndex}`;
+                    
+                    if (booking.status === 'pending') {
+                        block.classList.add('booking-pending');
+                    } else if (booking.status === 'rejected') {
+                        block.classList.add('booking-rejected');
+                        // No mostrar rechazadas o mostrarlas atenuadas
+                        // return; 
+                    }
+
                     block.style.cssText = getBlockStyle(booking.duration);
                     
                     block.innerHTML = `
@@ -404,7 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         } else {
-            // Weekly View (Agenda)
             const startOfWeek = formatDate(currentWeekStart);
             const endOfWeekDate = new Date(currentWeekStart);
             endOfWeekDate.setDate(endOfWeekDate.getDate() + 6);
@@ -432,6 +426,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const item = document.createElement('div');
                     const colorIndex = (parseInt(booking.machine) % 3) || 3;
                     item.className = `agenda-item machine-${colorIndex}`;
+                    
+                    if (booking.status === 'pending') {
+                        item.classList.add('pending-agenda');
+                    } else if (booking.status === 'rejected') {
+                        item.classList.add('rejected-agenda');
+                    }
                     
                     const mName = getMachineName(booking.machine);
                     
@@ -484,11 +484,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 inputMachine.value = e.target.value;
             });
 
+            if (existingBooking.status === 'pending') {
+                approveBtn.classList.remove('hidden');
+                rejectBtn.classList.remove('hidden');
+                saveBookingBtn.classList.add('hidden');
+            } else {
+                approveBtn.classList.add('hidden');
+                rejectBtn.classList.add('hidden');
+                saveBookingBtn.classList.remove('hidden');
+            }
+
         } else {
             inputId.value = '';
             inputName.value = '';
             document.getElementById('booking-duration').value = '30';
+            
             deleteBtn.classList.add('hidden');
+            approveBtn.classList.add('hidden');
+            rejectBtn.classList.add('hidden');
+            saveBookingBtn.classList.remove('hidden');
             
             if (currentView === 'weekly') {
                 displayMachine.innerHTML = `
@@ -517,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === modalOverlay) closeModal();
     });
 
-    // Form Submit
+    // Form Submit (Admin always creates approved bookings)
     bookingForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const duration = document.getElementById('booking-duration').value;
@@ -528,14 +542,59 @@ document.addEventListener('DOMContentLoaded', () => {
             time: inputTime.value,
             date: inputDate.value,
             name: inputName.value,
-            duration: parseInt(duration)
+            duration: parseInt(duration),
+            status: 'approved'
         };
 
         await StorageService.saveBooking(booking);
         closeModal();
     });
 
-    // Botón Eliminar
+    // Botones de Aprobación/Rechazo
+    approveBtn.addEventListener('click', async () => {
+        const id = inputId.value;
+        if (!id) return;
+        
+        const duration = document.getElementById('booking-duration').value;
+        
+        const booking = {
+            id: id,
+            machine: inputMachine.value,
+            time: inputTime.value,
+            date: inputDate.value,
+            name: inputName.value,
+            duration: parseInt(duration),
+            status: 'approved'
+        };
+
+        await StorageService.saveBooking(booking);
+        
+        // Rechazar (eliminar) automáticamente otras reservas pendientes para misma máquina/fecha/hora
+        const allBookings = await StorageService.getBookings();
+        const conflicts = allBookings.filter(b => 
+            b.id !== id && 
+            b.machine === booking.machine && 
+            b.date === booking.date && 
+            b.time === booking.time && 
+            b.status === 'pending'
+        );
+        
+        for (let conflict of conflicts) {
+            await StorageService.deleteBooking(conflict.id);
+        }
+
+        closeModal();
+    });
+
+    rejectBtn.addEventListener('click', async () => {
+        const id = inputId.value;
+        if (!id) return;
+        
+        // Eliminamos la reserva rechazada para no ensuciar la base de datos
+        await StorageService.deleteBooking(id);
+        closeModal();
+    });
+
     deleteBtn.addEventListener('click', async () => {
         if (confirm('¿Estás seguro de que deseas eliminar esta reserva?')) {
             await StorageService.deleteBooking(inputId.value);
@@ -547,9 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // SETTINGS MODAL LOGIC
     // ==========================================
     settingsBtn.addEventListener('click', () => {
-        // Llenar formulario con datos actuales
         document.getElementById('settings-motd').value = SettingsService.settings.motd || '';
-        
         document.getElementById('settings-logo-url').value = SettingsService.settings.logo || '';
         
         renderMachinesListForSettings();
@@ -566,9 +623,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === settingsModal) closeSettings();
     });
 
-    // Añadir máquina localmente en el formulario (antes de guardar)
     addMachineBtn.addEventListener('click', () => {
-        const newId = Date.now().toString(); // ID único temporal
+        const newId = Date.now().toString();
         const container = document.createElement('div');
         container.className = 'machine-setting-item';
         container.dataset.id = newId;
@@ -586,7 +642,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         container.querySelector('.delete-machine-btn').addEventListener('click', () => container.remove());
         
-        // Preview local
         container.querySelector('.machine-url-input').addEventListener('input', function() {
             const img = container.querySelector('.machine-img-preview');
             img.src = this.value;
@@ -602,8 +657,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const container = document.createElement('div');
             container.className = 'machine-setting-item';
             container.dataset.id = m.id;
-            // Para mantener la URL actual si no suben otra foto
-            container.dataset.currentImg = m.image || ''; 
             
             container.innerHTML = `
                 <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
@@ -640,7 +693,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newLogoUrl = document.getElementById('settings-logo-url').value.trim();
             const newMotd = document.getElementById('settings-motd').value;
             
-            // Recopilar máquinas
             const newMachines = [];
             const machineItems = document.querySelectorAll('.machine-setting-item');
             
@@ -663,7 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Error guardando ajustes:", error);
-            alert("Hubo un error al guardar los ajustes. Revisa los permisos de Firebase Storage.");
+            alert("Hubo un error al guardar los ajustes.");
         } finally {
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
@@ -674,13 +726,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // INICIALIZACIÓN
     // ==========================================
     
-    // Primero conectamos a settings, que dictará cómo se dibuja el grid
     SettingsService.initRealtimeUpdates(() => {
         updateUIFromSettings();
         updateDateDisplay();
         renderWeekNav();
         
-        // Conectar a Firebase Bookings después de tener los settings
         StorageService.initRealtimeUpdates(() => {
             renderBookings();
         });

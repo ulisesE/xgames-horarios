@@ -411,6 +411,50 @@ body {
     font-weight: 600;
 }
 
+/* Booking Status Styles */
+.booking-pending {
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(255, 165, 0, 0.2),
+        rgba(255, 165, 0, 0.2) 10px,
+        rgba(255, 165, 0, 0.4) 10px,
+        rgba(255, 165, 0, 0.4) 20px
+    ) !important;
+    border-color: #ffa500 !important;
+    animation: pulse-border 2s infinite;
+}
+
+.booking-pending::after {
+    content: '⏱️ Pendiente';
+    font-size: 0.65rem;
+    display: block;
+    background: #ffa500;
+    color: #000;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin-top: 4px;
+}
+
+@keyframes pulse-border {
+    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(255, 165, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+}
+
+.booking-rejected {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    text-decoration: line-through;
+}
+
+.booking-rejected::after {
+    content: '❌ Rechazada';
+    font-size: 0.65rem;
+    display: block;
+    color: var(--neon-red);
+    margin-top: 4px;
+}
+
 /* Modal */
 .modal-overlay {
     position: fixed;
@@ -690,6 +734,16 @@ input[type="text"]:focus {
     width: 100px;
     flex-shrink: 0;
     font-size: 0.95rem;
+}
+
+.agenda-item.pending-agenda {
+    border-color: #ffa500;
+    background: rgba(255, 165, 0, 0.1);
+}
+
+.agenda-item.rejected-agenda {
+    opacity: 0.5;
+    filter: grayscale(100%);
 }
 
 .agenda-info {
