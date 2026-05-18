@@ -1,4 +1,25 @@
-import { db, collection, onSnapshot } from './firebase-config.js';
+import { db, collection, onSnapshot, doc } from './firebase-config.js';
+
+/**
+ * Settings Service
+ */
+const SettingsService = {
+    settings: {
+        logo: '',
+        motd: '',
+        machines: []
+    },
+    
+    initRealtimeUpdates(callback) {
+        const docRef = doc(db, 'settings', 'global');
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                this.settings = docSnap.data();
+            }
+            callback();
+        });
+    }
+};
 
 /**
  * Data Storage Service (Firebase - Solo Lectura)
@@ -39,7 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // View controls
     const viewDailyBtn = document.getElementById('view-daily-btn');
     const viewWeeklyBtn = document.getElementById('view-weekly-btn');
-    let currentView = 'daily'; // 'daily' or 'weekly'
+    let currentView = 'daily'; 
+
+    // Header Logo element
+    const headerLogo = document.querySelector('.logo');
+    
+    // MOTD Elements
+    const motdModal = document.getElementById('motd-modal');
+    const motdText = document.getElementById('motd-text');
+    const motdOkBtn = document.getElementById('motd-ok-btn');
+    const closeMotdBtn = document.getElementById('close-motd-btn');
 
     // Estado de Fechas
     let selectedDate = new Date();
@@ -167,16 +197,64 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${h}:${min} ${ampm}`;
     }
 
+    // Actualiza UI desde Ajustes
+    function updateUIFromSettings() {
+        // Logo
+        if (SettingsService.settings.logo) {
+            headerLogo.innerHTML = `<img src="${SettingsService.settings.logo}" alt="Logo" style="max-height: 40px;">`;
+        } else {
+            headerLogo.innerHTML = `
+                <span class="neon-text-magenta">X</span>
+                <span class="neon-text-cyan">GAMES</span>
+                <span class="neon-text-yellow">BARCADE</span>
+            `;
+        }
+        
+        // MOTD (Mensaje del Día)
+        if (SettingsService.settings.motd && !sessionStorage.getItem('motd_seen')) {
+            motdText.textContent = SettingsService.settings.motd;
+            motdModal.classList.remove('hidden');
+        }
+
+        // Refrescar grilla si estamos en daily
+        if (currentView === 'daily') {
+            generateDailyGrid();
+        }
+        renderBookings();
+    }
+
+    function closeMotd() {
+        motdModal.classList.add('hidden');
+        sessionStorage.setItem('motd_seen', 'true');
+    }
+
+    motdOkBtn.addEventListener('click', closeMotd);
+    closeMotdBtn.addEventListener('click', closeMotd);
+    motdModal.addEventListener('click', (e) => {
+        if (e.target === motdModal) closeMotd();
+    });
+
     function generateDailyGrid() {
         scheduleBody.innerHTML = '';
-        const header = document.querySelector('.schedule-header');
-        header.style.gridTemplateColumns = '80px 1fr 1fr 1fr';
-        header.innerHTML = `
-            <div class="time-col-header">Hora</div>
-            <div class="machine-header" data-machine="1">Máquina 1</div>
-            <div class="machine-header" data-machine="2">Máquina 2</div>
-            <div class="machine-header" data-machine="3">Máquina 3</div>
-        `;
+        const header = document.getElementById('schedule-header');
+        
+        const machines = SettingsService.settings.machines || [];
+        const cols = machines.length;
+        
+        // Ajustar columnas dinámicamente
+        header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
+        
+        // Reconstruir cabecera
+        header.innerHTML = `<div class="time-col-header">Hora</div>`;
+        machines.forEach((m) => {
+            const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
+            header.innerHTML += `
+                <div class="machine-header" data-machine="${m.id}">
+                    ${imgHtml}
+                    <div class="machine-header-name">${m.name}</div>
+                </div>
+            `;
+        });
         
         for (let hour = 12; hour < 24; hour++) {
             for (let min of ['00', '30']) {
@@ -184,16 +262,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const row = document.createElement('div');
                 row.className = 'schedule-row';
+                row.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
                 
                 const timeCell = document.createElement('div');
                 timeCell.className = 'time-cell';
                 timeCell.textContent = timeStr;
                 row.appendChild(timeCell);
 
-                for (let m = 1; m <= 3; m++) {
+                machines.forEach(m => {
                     const machineCell = document.createElement('div');
                     machineCell.className = 'machine-cell';
-                    machineCell.dataset.machine = m;
+                    machineCell.dataset.machine = m.id;
                     machineCell.dataset.time = timeStr;
                     machineCell.dataset.date = formatDate(selectedDate);
                     
@@ -203,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     machineCell.appendChild(cellContent);
                     row.appendChild(machineCell);
-                }
+                });
                 
                 scheduleBody.appendChild(row);
             }
@@ -248,10 +327,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return 'height: calc(100% - 4px);'; // 30 mins
     }
+    
+    function getMachineName(id) {
+        const machines = SettingsService.settings.machines || [];
+        const m = machines.find(x => x.id == id);
+        return m ? m.name : `Máquina ${id}`;
+    }
 
     async function renderBookings() {
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
-        document.querySelectorAll('.weekly-booking-chip').forEach(el => el.remove());
+        document.querySelectorAll('.agenda-item').forEach(el => el.remove());
         
         const allBookings = await StorageService.getBookings();
         
@@ -264,7 +349,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (cell) {
                     const block = document.createElement('div');
-                    block.className = `booking-block machine-${booking.machine}`;
+                    const colorIndex = (parseInt(booking.machine) % 3) || 3;
+                    block.className = `booking-block machine-${colorIndex}`;
                     block.style.cssText = getBlockStyle(booking.duration);
                     block.style.cursor = 'default';
                     
@@ -299,14 +385,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const listContainer = document.getElementById(`agenda-list-${booking.date}`);
                 if (listContainer) {
                     const emptyMsg = listContainer.querySelector('.agenda-empty-msg');
-                    if (emptyMsg) emptyMsg.remove();
+                    if (emptyMsg) emptyMsg.style.display = 'none';
                     
                     const item = document.createElement('div');
-                    item.className = `agenda-item machine-${booking.machine}`;
+                    const colorIndex = (parseInt(booking.machine) % 3) || 3;
+                    item.className = `agenda-item machine-${colorIndex}`;
+                    
+                    const mName = getMachineName(booking.machine);
+                    
                     item.innerHTML = `
                         <div class="agenda-time">🕒 ${booking.time}</div>
                         <div class="agenda-info">
-                            <strong>[M${booking.machine}]</strong> ${booking.name} 
+                            <strong>[${mName}]</strong> ${booking.name} 
                             <span class="agenda-duration">(${booking.duration} min)</span>
                         </div>
                     `;
@@ -318,11 +408,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    updateDateDisplay();
-    renderWeekNav();
-    generateDailyGrid();
-    
-    StorageService.initRealtimeUpdates(() => {
-        renderBookings();
+    // Inicialización
+    SettingsService.initRealtimeUpdates(() => {
+        updateUIFromSettings();
+        updateDateDisplay();
+        renderWeekNav();
+        
+        StorageService.initRealtimeUpdates(() => {
+            renderBookings();
+        });
     });
+    
+    initPWA();
 });
+
+// PWA Install Logic
+let deferredPrompt;
+function initPWA() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .catch(err => console.log('Error SW:', err));
+    }
+
+    const installBtn = document.getElementById('install-btn');
+    if(installBtn) {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+    }
+}

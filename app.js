@@ -1,4 +1,47 @@
-import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from './firebase-config.js';
+import { db, storage, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, setDoc, ref, uploadBytes, getDownloadURL } from './firebase-config.js';
+
+/**
+ * Settings Service
+ */
+const SettingsService = {
+    settings: {
+        logo: '',
+        motd: '',
+        machines: [
+            { id: '1', name: 'Máquina 1', image: '' },
+            { id: '2', name: 'Máquina 2', image: '' },
+            { id: '3', name: 'Máquina 3', image: '' }
+        ]
+    },
+    
+    initRealtimeUpdates(callback) {
+        const docRef = doc(db, 'settings', 'global');
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                this.settings = docSnap.data();
+            } else {
+                // Initialize if not exists
+                this.saveSettings(this.settings);
+            }
+            callback();
+        });
+    },
+
+    async saveSettings(newSettings) {
+        await setDoc(doc(db, 'settings', 'global'), newSettings);
+    }
+};
+
+/**
+ * Image Service
+ */
+const ImageService = {
+    async uploadImage(file, path) {
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, file);
+        return await getDownloadURL(storageRef);
+    }
+};
 
 /**
  * Data Storage Service (Firebase)
@@ -59,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // View controls
     const viewDailyBtn = document.getElementById('view-daily-btn');
     const viewWeeklyBtn = document.getElementById('view-weekly-btn');
-    let currentView = 'daily'; // 'daily' or 'weekly'
+    let currentView = 'daily';
     
     // Modal elements
     const modalOverlay = document.getElementById('booking-modal');
@@ -73,6 +116,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputId = document.getElementById('booking-id');
     const inputName = document.getElementById('customer-name');
     const deleteBtn = document.getElementById('delete-btn');
+
+    // Settings Modal elements
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings-modal');
+    const cancelSettingsBtn = document.getElementById('cancel-settings-btn');
+    const settingsForm = document.getElementById('settings-form');
+    const addMachineBtn = document.getElementById('add-machine-btn');
+    const machinesListContainer = document.getElementById('machines-list-container');
+    const logoPreview = document.getElementById('preview-logo');
+    
+    // Header Logo element
+    const headerLogo = document.querySelector('.logo');
 
     // Estado de Fechas
     let selectedDate = new Date();
@@ -88,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getStartOfWeek(date) {
         const d = new Date(date);
-        const day = d.getDay() || 7; // Lunes es 1, Domingo es 7
+        const day = d.getDay() || 7;
         d.setDate(d.getDate() - day + 1);
         d.setHours(0,0,0,0);
         return d;
@@ -137,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
     prevWeekBtn.addEventListener('click', () => {
         currentWeekStart.setDate(currentWeekStart.getDate() - 7);
         if (currentView === 'daily') {
-            // Seleccionar el mismo día de la semana anterior
             selectedDate.setDate(selectedDate.getDate() - 7);
             renderWeekNav();
         } else {
@@ -150,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
     nextWeekBtn.addEventListener('click', () => {
         currentWeekStart.setDate(currentWeekStart.getDate() + 7);
         if (currentView === 'daily') {
-            // Seleccionar el mismo día de la semana siguiente
             selectedDate.setDate(selectedDate.getDate() + 7);
             renderWeekNav();
         } else {
@@ -202,17 +256,48 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${h}:${min} ${ampm}`;
     }
 
+    // Actualiza Logo y Cabeceras
+    function updateUIFromSettings() {
+        // Logo
+        if (SettingsService.settings.logo) {
+            headerLogo.innerHTML = `<img src="${SettingsService.settings.logo}" alt="Logo" style="max-height: 40px;">`;
+        } else {
+            headerLogo.innerHTML = `
+                <span class="neon-text-magenta">X</span>
+                <span class="neon-text-cyan">GAMES</span>
+                <span class="neon-text-yellow">BARCADE</span>
+            `;
+        }
+        
+        // Refrescar grilla si estamos en daily
+        if (currentView === 'daily') {
+            generateDailyGrid();
+        }
+        renderBookings();
+    }
+
     // Generar Grid Diario (12 a 23:30)
     function generateDailyGrid() {
         scheduleBody.innerHTML = '';
-        const header = document.querySelector('.schedule-header');
-        header.style.gridTemplateColumns = '80px 1fr 1fr 1fr';
-        header.innerHTML = `
-            <div class="time-col-header">Hora</div>
-            <div class="machine-header" data-machine="1">Máquina 1</div>
-            <div class="machine-header" data-machine="2">Máquina 2</div>
-            <div class="machine-header" data-machine="3">Máquina 3</div>
-        `;
+        const header = document.getElementById('schedule-header');
+        
+        const machines = SettingsService.settings.machines || [];
+        const cols = machines.length;
+        
+        // Ajustar columnas dinámicamente
+        header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
+        
+        // Reconstruir cabecera
+        header.innerHTML = `<div class="time-col-header">Hora</div>`;
+        machines.forEach((m, index) => {
+            const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
+            header.innerHTML += `
+                <div class="machine-header" data-machine="${m.id}">
+                    ${imgHtml}
+                    <div class="machine-header-name">${m.name}</div>
+                </div>
+            `;
+        });
         
         for (let hour = 12; hour < 24; hour++) {
             for (let min of ['00', '30']) {
@@ -220,27 +305,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const row = document.createElement('div');
                 row.className = 'schedule-row';
+                // La fila también debe tener las columnas dinámicas
+                row.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
                 
                 const timeCell = document.createElement('div');
                 timeCell.className = 'time-cell';
                 timeCell.textContent = timeStr;
                 row.appendChild(timeCell);
 
-                // 3 Máquinas
-                for (let m = 1; m <= 3; m++) {
+                // N Máquinas
+                machines.forEach(m => {
                     const machineCell = document.createElement('div');
                     machineCell.className = 'machine-cell';
-                    machineCell.dataset.machine = m;
+                    machineCell.dataset.machine = m.id;
                     machineCell.dataset.time = timeStr;
                     machineCell.dataset.date = formatDate(selectedDate);
                     
                     const cellContent = document.createElement('div');
                     cellContent.className = 'cell-content empty';
-                    cellContent.addEventListener('click', () => openModal(m, timeStr, formatDate(selectedDate)));
+                    cellContent.addEventListener('click', () => openModal(m.id, timeStr, formatDate(selectedDate)));
                     
                     machineCell.appendChild(cellContent);
                     row.appendChild(machineCell);
-                }
+                });
                 
                 scheduleBody.appendChild(row);
             }
@@ -286,11 +373,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return 'height: calc(100% - 4px);'; // 30 mins
     }
+    
+    function getMachineName(id) {
+        const m = SettingsService.settings.machines.find(x => x.id == id);
+        return m ? m.name : `Máquina ${id}`;
+    }
 
     async function renderBookings() {
-        // Limpiar reservas
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
-        document.querySelectorAll('.weekly-booking-chip').forEach(el => el.remove());
+        document.querySelectorAll('.agenda-item').forEach(el => el.remove());
         
         const allBookings = await StorageService.getBookings();
         
@@ -298,14 +389,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const bookings = allBookings.filter(b => b.date === formatDate(selectedDate));
             
             bookings.forEach(booking => {
-                // Ensure legacy times work or match 12-hour format properly.
-                // Assuming data will be saved with 12-hour format moving forward.
                 const cellSelector = `.machine-cell[data-machine="${booking.machine}"][data-time="${booking.time}"]`;
                 const cell = document.querySelector(cellSelector);
                 
                 if (cell) {
                     const block = document.createElement('div');
-                    block.className = `booking-block machine-${booking.machine}`;
+                    // Usar un color por defecto o ciclar entre los 3 colores neón si hay muchas
+                    const colorIndex = (parseInt(booking.machine) % 3) || 3;
+                    block.className = `booking-block machine-${colorIndex}`;
                     block.style.cssText = getBlockStyle(booking.duration);
                     
                     block.innerHTML = `
@@ -345,14 +436,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const listContainer = document.getElementById(`agenda-list-${booking.date}`);
                 if (listContainer) {
                     const emptyMsg = listContainer.querySelector('.agenda-empty-msg');
-                    if (emptyMsg) emptyMsg.remove();
+                    if (emptyMsg) emptyMsg.style.display = 'none';
                     
                     const item = document.createElement('div');
-                    item.className = `agenda-item machine-${booking.machine}`;
+                    const colorIndex = (parseInt(booking.machine) % 3) || 3;
+                    item.className = `agenda-item machine-${colorIndex}`;
+                    
+                    const mName = getMachineName(booking.machine);
+                    
                     item.innerHTML = `
                         <div class="agenda-time">🕒 ${booking.time}</div>
                         <div class="agenda-info">
-                            <strong>[M${booking.machine}]</strong> ${booking.name} 
+                            <strong>[${mName}]</strong> ${booking.name} 
                             <span class="agenda-duration">(${booking.duration} min)</span>
                         </div>
                     `;
@@ -369,28 +464,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Modal Handlers
-    function openModal(machine, time, date, existingBooking = null) {
-        inputMachine.value = machine;
+    function openModal(machineId, time, date, existingBooking = null) {
+        inputMachine.value = machineId;
         inputTime.value = time;
         inputDate.value = date;
         
-        displayMachine.textContent = `Máquina ${machine}`;
-        displayMachine.className = `info-text neon-text-${machine == 1 ? 'magenta' : machine == 2 ? 'cyan' : 'yellow'}`;
+        const mName = getMachineName(machineId);
+        displayMachine.textContent = mName;
         displayTime.textContent = time + ' | ' + date;
+        
+        const machinesOptions = SettingsService.settings.machines.map(m => 
+            `<option value="${m.id}" ${m.id == machineId ? 'selected' : ''}>${m.name}</option>`
+        ).join('');
 
         if (existingBooking) {
             inputId.value = existingBooking.id;
             inputName.value = existingBooking.name;
-            inputMachine.value = existingBooking.machine; // Just in case it's different from the column clicked
+            inputMachine.value = existingBooking.machine;
             document.getElementById('booking-duration').value = existingBooking.duration;
             deleteBtn.classList.remove('hidden');
             
-            // Allow changing machine when editing
             displayMachine.innerHTML = `
                 <select id="edit-machine-select" class="custom-select" style="margin-top:5px; padding: 5px;">
-                    <option value="1" ${existingBooking.machine == 1 ? 'selected' : ''}>Máquina 1</option>
-                    <option value="2" ${existingBooking.machine == 2 ? 'selected' : ''}>Máquina 2</option>
-                    <option value="3" ${existingBooking.machine == 3 ? 'selected' : ''}>Máquina 3</option>
+                    ${machinesOptions}
                 </select>
             `;
             document.getElementById('edit-machine-select').addEventListener('change', (e) => {
@@ -403,18 +499,17 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('booking-duration').value = '30';
             deleteBtn.classList.add('hidden');
             
-            // Allow changing machine when creating from weekly view
             if (currentView === 'weekly') {
                 displayMachine.innerHTML = `
                     <select id="create-machine-select" class="custom-select" style="margin-top:5px; padding: 5px;">
-                        <option value="1" ${machine == 1 ? 'selected' : ''}>Máquina 1</option>
-                        <option value="2" ${machine == 2 ? 'selected' : ''}>Máquina 2</option>
-                        <option value="3" ${machine == 3 ? 'selected' : ''}>Máquina 3</option>
+                        ${machinesOptions}
                     </select>
                 `;
                 document.getElementById('create-machine-select').addEventListener('change', (e) => {
                     inputMachine.value = e.target.value;
                 });
+            } else {
+                 displayMachine.innerHTML = `<div class="info-text neon-text-cyan">${mName}</div>`;
             }
         }
 
@@ -457,14 +552,175 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Inicializar app
-    updateDateDisplay();
-    renderWeekNav();
-    generateDailyGrid();
+    // ==========================================
+    // SETTINGS MODAL LOGIC
+    // ==========================================
+    settingsBtn.addEventListener('click', () => {
+        // Llenar formulario con datos actuales
+        document.getElementById('settings-motd').value = SettingsService.settings.motd || '';
+        
+        if (SettingsService.settings.logo) {
+            logoPreview.src = SettingsService.settings.logo;
+            logoPreview.style.display = 'block';
+        } else {
+            logoPreview.style.display = 'none';
+        }
+        document.getElementById('settings-logo-file').value = '';
+        
+        renderMachinesListForSettings();
+        settingsModal.classList.remove('hidden');
+    });
+
+    function closeSettings() {
+        settingsModal.classList.add('hidden');
+    }
+
+    closeSettingsBtn.addEventListener('click', closeSettings);
+    cancelSettingsBtn.addEventListener('click', closeSettings);
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) closeSettings();
+    });
+
+    // Añadir máquina localmente en el formulario (antes de guardar)
+    addMachineBtn.addEventListener('click', () => {
+        const newId = Date.now().toString(); // ID único temporal
+        const container = document.createElement('div');
+        container.className = 'machine-setting-item';
+        container.dataset.id = newId;
+        container.innerHTML = `
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <input type="text" class="machine-name-input" placeholder="Nombre Máquina" value="Nueva Máquina">
+                <button type="button" class="btn btn-danger btn-sm delete-machine-btn">🗑️</button>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <img class="machine-img-preview" src="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; display: none;">
+                <input type="file" class="machine-file-input" accept="image/*" style="font-size: 0.8rem;">
+            </div>
+            <hr style="margin: 10px 0; border-color: #333;">
+        `;
+        
+        container.querySelector('.delete-machine-btn').addEventListener('click', () => container.remove());
+        
+        // Preview local
+        container.querySelector('.machine-file-input').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = container.querySelector('.machine-img-preview');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        machinesListContainer.appendChild(container);
+    });
+
+    function renderMachinesListForSettings() {
+        machinesListContainer.innerHTML = '';
+        SettingsService.settings.machines.forEach(m => {
+            const container = document.createElement('div');
+            container.className = 'machine-setting-item';
+            container.dataset.id = m.id;
+            // Para mantener la URL actual si no suben otra foto
+            container.dataset.currentImg = m.image || ''; 
+            
+            container.innerHTML = `
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <input type="text" class="machine-name-input" placeholder="Nombre Máquina" value="${m.name}">
+                    <button type="button" class="btn btn-danger btn-sm delete-machine-btn">🗑️</button>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <img class="machine-img-preview" src="${m.image || ''}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; ${m.image ? 'display:block;' : 'display:none;'}">
+                    <input type="file" class="machine-file-input" accept="image/*" style="font-size: 0.8rem;">
+                </div>
+                <hr style="margin: 10px 0; border-color: #333;">
+            `;
+            
+            container.querySelector('.delete-machine-btn').addEventListener('click', () => container.remove());
+            
+            container.querySelector('.machine-file-input').addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = container.querySelector('.machine-img-preview');
+                        img.src = e.target.result;
+                        img.style.display = 'block';
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+
+            machinesListContainer.appendChild(container);
+        });
+    }
+
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('save-settings-btn');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Guardando...';
+        submitBtn.disabled = true;
+
+        try {
+            let newLogoUrl = SettingsService.settings.logo;
+            const logoFile = document.getElementById('settings-logo-file').files[0];
+            if (logoFile) {
+                newLogoUrl = await ImageService.uploadImage(logoFile, `logos/logo_${Date.now()}`);
+            }
+
+            const newMotd = document.getElementById('settings-motd').value;
+            
+            // Recopilar máquinas
+            const newMachines = [];
+            const machineItems = document.querySelectorAll('.machine-setting-item');
+            
+            for (let item of machineItems) {
+                const id = item.dataset.id;
+                const name = item.querySelector('.machine-name-input').value || `Máquina`;
+                let imageUrl = item.dataset.currentImg || '';
+                
+                const fileInput = item.querySelector('.machine-file-input');
+                if (fileInput.files && fileInput.files[0]) {
+                    imageUrl = await ImageService.uploadImage(fileInput.files[0], `machines/m_${id}_${Date.now()}`);
+                }
+                
+                newMachines.push({ id, name, image: imageUrl });
+            }
+
+            const newSettings = {
+                logo: newLogoUrl,
+                motd: newMotd,
+                machines: newMachines
+            };
+
+            await SettingsService.saveSettings(newSettings);
+            closeSettings();
+
+        } catch (error) {
+            console.error("Error guardando ajustes:", error);
+            alert("Hubo un error al guardar los ajustes. Revisa los permisos de Firebase Storage.");
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // ==========================================
+    // INICIALIZACIÓN
+    // ==========================================
     
-    // Conectar a Firebase y renderizar
-    StorageService.initRealtimeUpdates(() => {
-        renderBookings();
+    // Primero conectamos a settings, que dictará cómo se dibuja el grid
+    SettingsService.initRealtimeUpdates(() => {
+        updateUIFromSettings();
+        updateDateDisplay();
+        renderWeekNav();
+        
+        // Conectar a Firebase Bookings después de tener los settings
+        StorageService.initRealtimeUpdates(() => {
+            renderBookings();
+        });
     });
     
     initPWA();

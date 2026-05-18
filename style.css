@@ -711,3 +711,104 @@ input[type="text"]:focus {
 .agenda-item.machine-1 .agenda-info strong { color: var(--neon-magenta); }
 .agenda-item.machine-2 .agenda-info strong { color: var(--neon-cyan); }
 .agenda-item.machine-3 .agenda-info strong { color: var(--neon-yellow); }
+
+/* =========================================
+   Nuevos Ajustes: Settings & MOTD & Imágenes
+   ========================================= */
+
+.settings-modal {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.settings-section {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section h3 {
+    color: var(--neon-cyan);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.custom-textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.custom-textarea:focus {
+    outline: none;
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+.file-input {
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px dashed var(--neon-cyan);
+    border-radius: var(--border-radius);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.machine-setting-item {
+    background: var(--bg-panel-hover);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.machine-name-input {
+    flex: 1;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: white;
+}
+
+.btn-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+/* Machine Header Images */
+.machine-header-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--neon-cyan);
+    margin-bottom: 5px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+}
+
+.machine-header-name {
+    font-size: 0.9rem;
+}
+
+/* Dynamic Grid Classes */
+.schedule-header, .schedule-row {
+    /* El grid-template-columns se maneja via JS, pero definimos transición */
+    transition: grid-template-columns 0.3s ease;
+}

@@ -41,6 +41,7 @@
                 </div>
                 <div class="header-actions">
                     <span id="current-date" class="date-display"></span>
+                    <button id="settings-btn" class="btn btn-outline" title="Ajustes">⚙️</button>
                     <button id="zoom-btn" class="btn btn-outline" title="Comprimir Vista">🔍</button>
                     <button id="install-btn" class="btn btn-outline" style="display: none;">Instalar App</button>
                 </div>
@@ -66,11 +67,9 @@
 
         <main class="main-content">
             <div class="schedule-container" id="schedule-container-main">
-                <div class="schedule-header">
+                <div class="schedule-header" id="schedule-header">
                     <div class="time-col-header">Hora</div>
-                    <div class="machine-header" data-machine="1">Máquina 1</div>
-                    <div class="machine-header" data-machine="2">Máquina 2</div>
-                    <div class="machine-header" data-machine="3">Máquina 3</div>
+                    <!-- Máquinas generadas dinámicamente -->
                 </div>
                 <div class="schedule-body" id="schedule-body">
                     <!-- Filas generadas dinámicamente -->
@@ -126,6 +125,51 @@
                     <div class="modal-actions">
                         <button type="button" id="delete-btn" class="btn btn-danger hidden">Eliminar</button>
                         <button type="submit" class="btn btn-primary">Guardar Reserva</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ajustes -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal settings-modal">
+            <div class="modal-header">
+                <h2>Ajustes del Sistema</h2>
+                <button id="close-settings-modal" class="icon-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="settings-form">
+                    
+                    <div class="settings-section">
+                        <h3>Logo Principal</h3>
+                        <div class="form-group">
+                            <label>Logo Actual:</label>
+                            <img id="preview-logo" src="" alt="Logo" style="max-height: 50px; display: none; margin-bottom: 10px;">
+                            <input type="file" id="settings-logo-file" accept="image/*" class="file-input">
+                            <small>Sube una imagen para reemplazar el texto XGAMES BARCADE.</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Mensaje del Día (MOTD)</h3>
+                        <div class="form-group">
+                            <label for="settings-motd">Texto del Mensaje</label>
+                            <textarea id="settings-motd" rows="3" placeholder="Ej. ¡Bienvenidos! Hoy tenemos promoción en bebidas." class="custom-textarea"></textarea>
+                            <small>Este mensaje se mostrará a los clientes cuando entren a la página (una vez por sesión).</small>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Máquinas <button type="button" id="add-machine-btn" class="btn btn-outline btn-sm" style="float: right;">+ Agregar Máquina</button></h3>
+                        <div id="machines-list-container">
+                            <!-- Lista generada dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="modal-actions" style="margin-top: 20px;">
+                        <button type="button" id="cancel-settings-btn" class="btn btn-outline">Cancelar</button>
+                        <button type="submit" id="save-settings-btn" class="btn btn-primary">Guardar Cambios</button>
                     </div>
                 </form>
             </div>

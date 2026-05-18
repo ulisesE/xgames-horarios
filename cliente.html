@@ -27,6 +27,7 @@
                 <div class="header-actions">
                     <span id="current-date" class="date-display"></span>
                     <button id="zoom-btn" class="btn btn-outline" title="Comprimir Vista">🔍</button>
+                    <button id="install-btn" class="btn btn-outline" style="display: none;">Instalar App</button>
                 </div>
             </div>
             
@@ -50,17 +51,29 @@
 
         <main class="main-content">
             <div class="schedule-container" id="schedule-container-main">
-                <div class="schedule-header">
+                <div class="schedule-header" id="schedule-header">
                     <div class="time-col-header">Hora</div>
-                    <div class="machine-header" data-machine="1">Máquina 1</div>
-                    <div class="machine-header" data-machine="2">Máquina 2</div>
-                    <div class="machine-header" data-machine="3">Máquina 3</div>
+                    <!-- Máquinas generadas dinámicamente -->
                 </div>
                 <div class="schedule-body" id="schedule-body">
                     <!-- Filas generadas dinámicamente -->
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Modal MOTD (Message of the Day) -->
+    <div id="motd-modal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 400px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h2>Aviso Importante</h2>
+                <button id="close-motd-btn" class="icon-btn" style="position: absolute; right: 10px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="motd-text" style="font-size: 1.1rem; margin: 20px 0; line-height: 1.5; color: var(--text-light);"></p>
+                <button id="motd-ok-btn" class="btn btn-primary" style="width: 100%;">Entendido</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="./cliente.js"></script>
