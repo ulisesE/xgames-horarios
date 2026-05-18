@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputDate = document.getElementById('booking-date');
     const inputId = document.getElementById('booking-id');
     const inputName = document.getElementById('customer-name');
+    const inputPaid = document.getElementById('booking-paid');
     const deleteBtn = document.getElementById('delete-btn');
     const approveBtn = document.getElementById('approve-btn');
     const rejectBtn = document.getElementById('reject-btn');
@@ -385,8 +386,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     block.style.cssText = getBlockStyle(booking.duration);
                     
+                    const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
+                    
                     block.innerHTML = `
-                        <div class="booking-name">${booking.name}</div>
+                        <div class="booking-name">${paidIcon}${booking.name}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
@@ -434,11 +437,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     const mName = getMachineName(booking.machine);
+                    const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
                     
                     item.innerHTML = `
                         <div class="agenda-time">🕒 ${booking.time}</div>
                         <div class="agenda-info">
-                            <strong>[${mName}]</strong> ${booking.name} 
+                            <strong>[${mName}]</strong> ${paidIcon}${booking.name} 
                             <span class="agenda-duration">(${booking.duration} min)</span>
                         </div>
                     `;
@@ -473,6 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inputName.value = existingBooking.name;
             inputMachine.value = existingBooking.machine;
             document.getElementById('booking-duration').value = existingBooking.duration;
+            inputPaid.checked = !!existingBooking.paid;
             deleteBtn.classList.remove('hidden');
             
             displayMachine.innerHTML = `
@@ -498,6 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inputId.value = '';
             inputName.value = '';
             document.getElementById('booking-duration').value = '30';
+            inputPaid.checked = false;
             
             deleteBtn.classList.add('hidden');
             approveBtn.classList.add('hidden');
@@ -543,7 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
             date: inputDate.value,
             name: inputName.value,
             duration: parseInt(duration),
-            status: 'approved'
+            status: 'approved',
+            paid: inputPaid.checked
         };
 
         await StorageService.saveBooking(booking);
@@ -564,7 +571,8 @@ document.addEventListener('DOMContentLoaded', () => {
             date: inputDate.value,
             name: inputName.value,
             duration: parseInt(duration),
-            status: 'approved'
+            status: 'approved',
+            paid: inputPaid.checked
         };
 
         await StorageService.saveBooking(booking);
