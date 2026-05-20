@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pump It Up - Horarios (Solo Lectura)</title>
+    <meta name="theme-color" content="#0f0f1b">
+    <link rel="manifest" href="./manifest-cliente.json">
+
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="neon-text-magenta">X</span>
+                    <span class="neon-text-cyan">GAMES</span>
+                    <span class="neon-text-yellow">BARCADE</span>
+                </div>
+                <div class="header-actions">
+                    <span id="current-date" class="date-display"></span>
+                    <button id="login-btn" class="btn btn-primary" title="Iniciar Sesión">Ingresar</button>
+                    <span id="user-display" class="neon-text-cyan hidden" style="font-weight: bold; margin-right: 10px;"></span>
+                    <button id="logout-btn" class="btn btn-outline hidden" title="Cerrar Sesión">Salir</button>
+                    <button id="zoom-btn" class="btn btn-outline" title="Comprimir Vista">🔍</button>
+                    <button id="install-btn" class="btn btn-outline" style="display: none;">Instalar App</button>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 10px;">
+                <span style="background: var(--neon-cyan); color: var(--bg-dark); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">Vista de Cliente (Solo Lectura)</span>
+            </div>
+
+            <div class="view-controls" style="text-align: center; margin-top: 1rem;">
+                <button id="view-daily-btn" class="btn btn-primary active-view" style="padding: 5px 15px; margin-right: 10px;">Día</button>
+                <button id="view-weekly-btn" class="btn btn-outline" style="padding: 5px 15px;">Semana</button>
+            </div>
+
+            <div class="week-navigator" id="daily-navigator" style="margin-top: 1rem; margin-bottom: 0;">
+                <button id="prev-week" class="icon-btn">&lt;</button>
+                <div id="week-days" class="week-days">
+                    <!-- Días generados dinámicamente -->
+                </div>
+                <button id="next-week" class="icon-btn">&gt;</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="schedule-container" id="schedule-container-main">
+                <div class="schedule-header" id="schedule-header">
+                    <div class="time-col-header">Hora</div>
+                    <!-- Máquinas generadas dinámicamente -->
+                </div>
+                <div class="schedule-body" id="schedule-body">
+                    <!-- Filas generadas dinámicamente -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal MOTD (Message of the Day) -->
+    <div id="motd-modal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 400px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; position: relative;">
+                <h2>Aviso Importante</h2>
+                <button id="close-motd-btn" class="icon-btn" style="position: absolute; right: 10px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="motd-text" style="font-size: 1.1rem; margin: 20px 0; line-height: 1.5; color: var(--text-light);"></p>
+                <button id="motd-ok-btn" class="btn btn-primary" style="width: 100%;">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login / Registro -->
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 350px;">
+            <div class="modal-header">
+                <h2>Ingresar / Registro</h2>
+                <button id="close-login-btn" class="icon-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-username">Nombre de Usuario</label>
+                        <input type="text" id="login-username" required placeholder="Ej. CarlosG" autocomplete="username">
+                        <small style="color:var(--text-muted); display:block; margin-top:5px;">Usa el mismo nombre siempre para ver tus reservas.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-pin">PIN (4 Dígitos)</label>
+                        <input type="password" id="login-pin" required pattern="[0-9]{4}" placeholder="Ej. 1234" style="width: 100%; padding: 0.8rem 1rem; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-family: 'Outfit'; font-size: 1rem;">
+                        <small style="color:var(--text-muted); display:block; margin-top:5px;">Inventa un PIN fácil de recordar.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Solicitud de Reserva -->
+    <div id="client-booking-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Solicitar Reserva</h2>
+                <button id="close-client-booking-btn" class="icon-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="client-booking-form">
+                    <input type="hidden" id="client-booking-machine">
+                    <input type="hidden" id="client-booking-time">
+                    <input type="hidden" id="client-booking-date">
+
+                    <div class="form-group">
+                        <label>Máquina</label>
+                        <div id="client-display-machine" class="info-text"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hora de Inicio</label>
+                        <div id="client-display-time" class="info-text"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client-booking-duration">Duración</label>
+                        <select id="client-booking-duration" class="custom-select" required>
+                            <option value="30">30 Minutos</option>
+                            <option value="60">1 Hora</option>
+                            <option value="90">1 Hora y Media</option>
+                            <option value="120">2 Horas</option>
+                            <option value="150">2 Horas y Media</option>
+                            <option value="180">3 Horas</option>
+                            <option value="210">3 Horas y Media</option>
+                            <option value="240">4 Horas</option>
+                            <option value="300">5 Horas</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-client-booking-btn" class="btn btn-outline">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./cliente.js"></script>
+</body>
+
+</html>

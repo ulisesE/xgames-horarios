@@ -1,10 +1,14 @@
-const CACHE_NAME = 'piu-reservas-v1';
+const CACHE_NAME = 'piu-reservas-v2';
 const urlsToCache = [
   './',
   './index.html',
+  './cliente.html',
   './style.css',
   './app.js',
+  './cliente.js',
+  './firebase-config.js',
   './manifest.json',
+  './manifest-cliente.json',
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap'
 ];
 

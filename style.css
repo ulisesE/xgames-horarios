@@ -411,6 +411,50 @@ body {
     font-weight: 600;
 }
 
+/* Booking Status Styles */
+.booking-pending {
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(255, 165, 0, 0.2),
+        rgba(255, 165, 0, 0.2) 10px,
+        rgba(255, 165, 0, 0.4) 10px,
+        rgba(255, 165, 0, 0.4) 20px
+    ) !important;
+    border-color: #ffa500 !important;
+    animation: pulse-border 2s infinite;
+}
+
+.booking-pending::after {
+    content: '⏱️ Pendiente';
+    font-size: 0.65rem;
+    display: block;
+    background: #ffa500;
+    color: #000;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin-top: 4px;
+}
+
+@keyframes pulse-border {
+    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(255, 165, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+}
+
+.booking-rejected {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    text-decoration: line-through;
+}
+
+.booking-rejected::after {
+    content: '❌ Rechazada';
+    font-size: 0.65rem;
+    display: block;
+    color: var(--neon-red);
+    margin-top: 4px;
+}
+
 /* Modal */
 .modal-overlay {
     position: fixed;
@@ -625,3 +669,200 @@ input[type="text"]:focus {
         padding: 1rem;
     }
 }
+
+/* Vista Agenda Semanal */
+.agenda-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    background-color: var(--bg-dark);
+}
+
+.agenda-day-card {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.agenda-day-header {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.agenda-bookings-list {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.agenda-empty-msg {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.agenda-item {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.agenda-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.agenda-time {
+    font-weight: 800;
+    color: white;
+    width: 100px;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+}
+
+.agenda-item.pending-agenda {
+    border-color: #ffa500;
+    background: rgba(255, 165, 0, 0.1);
+}
+
+.agenda-item.rejected-agenda {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+.agenda-info {
+    flex: 1;
+    color: var(--text-main);
+    font-size: 1rem;
+}
+
+.agenda-duration {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.agenda-item.machine-1 { border-left: 4px solid var(--neon-magenta); }
+.agenda-item.machine-2 { border-left: 4px solid var(--neon-cyan); }
+.agenda-item.machine-3 { border-left: 4px solid var(--neon-yellow); }
+
+.agenda-item.machine-1 .agenda-info strong { color: var(--neon-magenta); }
+.agenda-item.machine-2 .agenda-info strong { color: var(--neon-cyan); }
+.agenda-item.machine-3 .agenda-info strong { color: var(--neon-yellow); }
+
+/* =========================================
+   Nuevos Ajustes: Settings & MOTD & Imágenes
+   ========================================= */
+
+.settings-modal {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.settings-section {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section h3 {
+    color: var(--neon-cyan);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.custom-textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.custom-textarea:focus {
+    outline: none;
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+.file-input {
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px dashed var(--neon-cyan);
+    border-radius: var(--border-radius);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.machine-setting-item {
+    background: var(--bg-panel-hover);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.machine-name-input {
+    flex: 1;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: white;
+}
+
+.btn-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+/* Machine Header Images */
+.machine-header-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--neon-cyan);
+    margin-bottom: 5px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+}
+
+.machine-header-name {
+    font-size: 0.9rem;
+}
+
+/* Dynamic Grid Classes */
+.schedule-header, .schedule-row {
+    /* El grid-template-columns se maneja via JS, pero definimos transición */
+    transition: grid-template-columns 0.3s ease;
+}
