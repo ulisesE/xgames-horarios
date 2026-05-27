@@ -108,7 +108,12 @@
                         <input type="text" id="customer-name" required placeholder="Ej. Carlos G." autocomplete="off">
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="customer-phone-group">
+                        <label for="customer-phone">Teléfono / WhatsApp</label>
+                        <input type="text" id="customer-phone" placeholder="Ej. 521234567890 (sin + ni espacios)" autocomplete="off">
+                    </div>
+
+                    <div class="form-group" id="booking-duration-group">
                         <label for="booking-duration">Duración</label>
                         <select id="booking-duration" class="custom-select" required>
                             <option value="30">30 Minutos</option>
@@ -123,12 +128,21 @@
                         </select>
                     </div>
 
-                    <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">
+                    <div class="form-group" id="booking-paid-group" style="display: flex; align-items: center; gap: 10px; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">
                         <input type="checkbox" id="booking-paid" style="width: 20px; height: 20px; cursor: pointer;">
                         <label for="booking-paid" style="margin: 0; cursor: pointer; color: #00ffcc; font-weight: bold;">💰 Reserva Pagada</label>
                     </div>
 
+                    <div class="switch-container">
+                        <label class="switch-label" for="booking-blocked">⚠️ Bloquear Horario (Mantenimiento)</label>
+                        <label class="switch">
+                            <input type="checkbox" id="booking-blocked">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
                     <div class="modal-actions">
+                        <button type="button" id="whatsapp-btn" class="btn btn-whatsapp hidden">🟢 WhatsApp</button>
                         <button type="button" id="reject-btn" class="btn btn-outline hidden" style="border-color: var(--neon-red); color: var(--neon-red);">Rechazar</button>
                         <button type="button" id="approve-btn" class="btn btn-primary hidden" style="background: #00cc00; box-shadow: 0 0 10px rgba(0,204,0,0.5);">Aprobar</button>
                         <button type="button" id="delete-btn" class="btn btn-danger hidden">Eliminar</button>
