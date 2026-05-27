@@ -947,6 +947,15 @@ function initPWA() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .catch(err => console.log('Error SW:', err));
+
+        // Escucha cambios del Service Worker para forzar actualización de caché y recargar
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                window.location.reload();
+                refreshing = true;
+            }
+        });
     }
 
     const installBtn = document.getElementById('install-btn');
