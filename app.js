@@ -29,15 +29,46 @@ const SettingsService = {
 };
 
 /**
+ * Notification Service
+ */
+function notifyAdmin(booking) {
+    const title = 'Nueva solicitud de reserva';
+    const body = `${booking.name} ha solicitado ${booking.duration} min a las ${booking.time}`;
+    
+    try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audio.play().catch(e => console.log('Audio play failed:', e));
+    } catch(e) {}
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+            body: body,
+            icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzBmMGYxYiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmaWxsPSIjZmYwMGZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjM1ZW0iPlBJVTwvdGV4dD48L3N2Zz4='
+        });
+    }
+}
+
+/**
  * Data Storage Service (Firebase)
  */
 const StorageService = {
     collectionName: 'bookings',
     bookingsCache: [],
+    isInitialLoad: true,
     
     initRealtimeUpdates(callback) {
         const q = collection(db, this.collectionName);
         onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (!this.isInitialLoad && change.type === 'added') {
+                    const data = change.doc.data();
+                    if (data.status === 'pending') {
+                        notifyAdmin(data);
+                    }
+                }
+            });
+            this.isInitialLoad = false;
+
             this.bookingsCache = [];
             snapshot.forEach((doc) => {
                 this.bookingsCache.push({ id: doc.id, ...doc.data() });
@@ -81,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevWeekBtn = document.getElementById('prev-week');
     const nextWeekBtn = document.getElementById('next-week');
     const zoomBtn = document.getElementById('zoom-btn');
+    const notifyBtn = document.getElementById('notify-btn');
     const scheduleContainerMain = document.getElementById('schedule-container-main');
     const dailyNavigator = document.getElementById('daily-navigator');
     
@@ -208,6 +240,43 @@ document.addEventListener('DOMContentLoaded', () => {
         zoomBtn.textContent = isCompact ? '➕' : '🔍';
         zoomBtn.title = isCompact ? 'Expandir Vista' : 'Comprimir Vista';
     });
+
+    function updateNotifyBtnState() {
+        if (!('Notification' in window)) {
+            notifyBtn.style.display = 'none';
+            return;
+        }
+        notifyBtn.style.display = 'inline-block';
+        if (Notification.permission === 'granted') {
+            notifyBtn.classList.remove('btn-outline');
+            notifyBtn.classList.add('btn-primary');
+            notifyBtn.title = "Notificaciones Activas";
+        } else if (Notification.permission === 'denied') {
+            notifyBtn.style.display = 'none';
+        } else {
+            notifyBtn.classList.remove('btn-primary');
+            notifyBtn.classList.add('btn-outline');
+            notifyBtn.title = "Activar Notificaciones";
+        }
+    }
+
+    notifyBtn.addEventListener('click', () => {
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                alert("Las notificaciones ya están activadas.");
+            } else {
+                Notification.requestPermission().then(permission => {
+                    updateNotifyBtnState();
+                    if (permission === 'granted') {
+                        new Notification('¡Notificaciones activadas!', {
+                            body: 'Recibirás un aviso cuando haya nuevas solicitudes de reserva.'
+                        });
+                    }
+                });
+            }
+        }
+    });
+    updateNotifyBtnState();
 
     viewDailyBtn.addEventListener('click', () => {
         currentView = 'daily';
