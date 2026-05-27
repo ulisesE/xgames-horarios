@@ -185,6 +185,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const addMachineBtn = document.getElementById('add-machine-btn');
     const machinesListContainer = document.getElementById('machines-list-container');
     
+    // Help Modal elements
+    const helpBtn = document.getElementById('help-btn');
+    const helpModal = document.getElementById('help-modal');
+    const closeHelpBtn = document.getElementById('close-help-btn');
+    const tabManualBtn = document.getElementById('tab-manual-btn');
+    const tabChangelogBtn = document.getElementById('tab-changelog-btn');
+    const tabManualContent = document.getElementById('tab-manual-content');
+    const tabChangelogContent = document.getElementById('tab-changelog-content');
+
     // Header Logo element
     const headerLogo = document.querySelector('.logo');
 
@@ -922,6 +931,38 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
         }
+    });
+
+    // ==========================================
+    // HELP MODAL LOGIC (MANUAL & CHANGELOG)
+    // ==========================================
+    helpBtn.addEventListener('click', () => {
+        helpModal.classList.remove('hidden');
+        tabManualBtn.click(); // Reset to manual tab
+    });
+
+    function closeHelp() {
+        helpModal.classList.add('hidden');
+    }
+
+    closeHelpBtn.addEventListener('click', closeHelp);
+    helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) closeHelp();
+    });
+
+    // Tab switching inside Help Modal
+    tabManualBtn.addEventListener('click', () => {
+        tabManualBtn.classList.add('active');
+        tabChangelogBtn.classList.remove('active');
+        tabManualContent.classList.remove('hidden');
+        tabChangelogContent.classList.add('hidden');
+    });
+
+    tabChangelogBtn.addEventListener('click', () => {
+        tabChangelogBtn.classList.add('active');
+        tabManualBtn.classList.remove('active');
+        tabChangelogContent.classList.remove('hidden');
+        tabManualContent.classList.add('hidden');
     });
 
     // ==========================================

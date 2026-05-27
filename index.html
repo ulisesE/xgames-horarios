@@ -43,6 +43,7 @@
                     <span id="current-date" class="date-display"></span>
                     <button id="notify-btn" class="btn btn-outline" title="Activar Notificaciones" style="display: none;">🔔</button>
                     <button id="settings-btn" class="btn btn-outline" title="Ajustes">⚙️</button>
+                    <button id="help-btn" class="btn btn-outline" title="Manual y Changelog">📖</button>
                     <button id="zoom-btn" class="btn btn-outline" title="Comprimir Vista">🔍</button>
                     <button id="install-btn" class="btn btn-outline" style="display: none;">Instalar App</button>
                 </div>
@@ -194,6 +195,86 @@
                         <button type="submit" id="save-settings-btn" class="btn btn-primary">Guardar Cambios</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ayuda (Manual y Changelog) -->
+    <div id="help-modal" class="modal-overlay hidden">
+        <div class="modal settings-modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2>Manual y Changelog</h2>
+                <button id="close-help-btn" class="icon-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 10px;">
+                <div class="tab-container">
+                    <button type="button" id="tab-manual-btn" class="tab-btn active">Manual Admin</button>
+                    <button type="button" id="tab-changelog-btn" class="tab-btn">Historial Cambios</button>
+                </div>
+
+                <!-- Contenido Manual -->
+                <div id="tab-manual-content" class="tab-content" style="text-align: left; line-height: 1.6;">
+                    <div class="settings-section">
+                        <h3>👑 Controles de Administrador</h3>
+                        <p style="margin-bottom: 10px;"><strong>🔐 Autenticación:</strong> Ingresa con la contraseña maestra <code>XGAMESROOT</code> para gestionar las máquinas y reservas.</p>
+                        <p style="margin-bottom: 10px;"><strong>💰 Control de Pago:</strong> Activa el check de "Reserva Pagada" 💰 en el modal de reserva para añadir la bolsa de dinero visual al bloque y controlar tus ingresos.</p>
+                        <p style="margin-bottom: 10px;"><strong>🟢 Notificación WhatsApp:</strong> Da clic en "🟢 WhatsApp" en reservas activas para enviar de inmediato un mensaje de confirmación automatizado por WhatsApp Web.</p>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>🛠️ Bloqueo por Mantenimiento</h3>
+                        <p style="margin-bottom: 5px;">Para suspender el uso público de una máquina en un horario específico:</p>
+                        <ol style="margin-left: 20px; margin-bottom: 10px;">
+                            <li>Haz clic en el horario deseado en el calendario diario.</li>
+                            <li>Activa el switch de <strong>"Bloquear Horario (Mantenimiento)"</strong>.</li>
+                            <li>La celda se guardará como <code>status: 'blocked'</code> y se mostrará en gris oscuro con el candado 🔒.</li>
+                        </ol>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>⚙️ Ajustes del Sistema</h3>
+                        <p style="margin-bottom: 5px;">Haz clic en el engranaje (⚙️) para personalizar:</p>
+                        <ul style="margin-left: 20px;">
+                            <li>Logotipo principal (URL de imagen).</li>
+                            <li>Mensaje del Día (MOTD) mostrado al entrar.</li>
+                            <li>Agregar, renombrar o eliminar máquinas y sus imágenes de cabecera.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Contenido Changelog -->
+                <div id="tab-changelog-content" class="tab-content hidden" style="text-align: left;">
+                    <div class="settings-section" style="border-left: 3px solid var(--neon-magenta);">
+                        <h4 style="color: var(--neon-magenta); margin-bottom: 5px;">⚡ VERSIÓN 3.0 (Mayo 2026) - Versión Premium</h4>
+                        <ul style="margin-left: 20px; font-size: 0.9rem;">
+                            <li><strong>Responsividad Avanzada:</strong> Modales con scroll interno y barra neón.</li>
+                            <li><strong>Sticky Grid:</strong> Desplazamiento horizontal fluido en móviles con columna de horas fija a la izquierda.</li>
+                            <li><strong>Traslapes (Overlapping):</strong> Fusión y bloqueo automático de celdas intermedias en turnos de larga duración.</li>
+                            <li><strong>Bloqueo de Mantenimiento:</strong> Switch para desactivar celdas con candado visual 🔒.</li>
+                            <li><strong>Ficha de Jugador:</strong> Clic en celdas aprobadas para ver el perfil ciberpunk del cliente.</li>
+                            <li><strong>WhatsApp Directo:</strong> Mensajería rápida para avisar aprobaciones de reservas.</li>
+                            <li><strong>Actualizaciones PWA Forzadas:</strong> skipWaiting y controllerchange para recargas instantáneas al actualizar.</li>
+                        </ul>
+                    </div>
+
+                    <div class="settings-section" style="border-left: 3px solid var(--neon-cyan);">
+                        <h4 style="color: var(--neon-cyan); margin-bottom: 5px;">⚡ VERSIÓN 2.0 - Ajustes Dinámicos</h4>
+                        <ul style="margin-left: 20px; font-size: 0.9rem;">
+                            <li>Configuración del MOTD global para clientes desde ajustes.</li>
+                            <li>Reemplazo de texto por logotipo de imagen en la cabecera.</li>
+                            <li>Soporte para agregar y eliminar máquinas reactivamente desde el panel.</li>
+                        </ul>
+                    </div>
+
+                    <div class="settings-section" style="border-left: 3px solid var(--neon-yellow);">
+                        <h4 style="color: var(--neon-yellow); margin-bottom: 5px;">⚡ VERSIÓN 1.0 - Core Engine</h4>
+                        <ul style="margin-left: 20px; font-size: 0.9rem;">
+                            <li>Cuadrícula horaria de 12:00 PM a 11:30 PM para las máquinas de baile.</li>
+                            <li>Base de datos integrada en tiempo real con Firebase Firestore.</li>
+                            <li>Instalación PWA nativa y almacenamiento offline con Service Worker.</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
