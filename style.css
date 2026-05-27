@@ -226,8 +226,29 @@ body {
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     transition: all 0.3s ease;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Barra de scroll horizontal neón */
+.schedule-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.schedule-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+}
+
+.schedule-container::-webkit-scrollbar-thumb {
+    background: var(--neon-cyan);
+    border-radius: var(--border-radius);
+}
+
+.schedule-container::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-magenta);
 }
 
 /* Vista Comprimida (Zoom) */
@@ -256,7 +277,7 @@ body {
 .schedule-header {
     display: grid;
     grid-template-columns: 80px 1fr 1fr 1fr;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(15, 15, 27, 0.95);
     border-bottom: 2px solid var(--border-color);
     position: sticky;
     top: 0;
@@ -270,6 +291,12 @@ body {
     font-weight: 600;
     font-size: 0.8rem;
     border-right: 1px solid var(--border-color);
+    position: sticky;
+    left: 0;
+    top: 0;
+    z-index: 20;
+    background-color: #111122;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.4);
 }
 
 .machine-header {
@@ -280,6 +307,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     border-right: 1px solid var(--border-color);
+    min-width: 140px;
 }
 
 .machine-header:last-child {
@@ -313,6 +341,10 @@ body {
     background-color: rgba(255, 255, 255, 0.02);
 }
 
+.schedule-row:hover .time-cell {
+    background-color: var(--bg-panel-hover);
+}
+
 .time-cell {
     padding: 0.8rem 0.5rem;
     text-align: center;
@@ -323,6 +355,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background-color: var(--bg-panel);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.4);
+    transition: background-color var(--transition-fast);
 }
 
 .machine-cell {
@@ -330,10 +368,17 @@ body {
     border-right: 1px solid var(--border-color);
     position: relative;
     min-height: 40px;
+    min-width: 140px;
 }
 
 .machine-cell:last-child {
     border-right: none;
+}
+
+@media (min-width: 769px) {
+    .machine-header, .machine-cell {
+        min-width: unset;
+    }
 }
 
 .cell-content {
@@ -483,6 +528,9 @@ body {
     border-radius: 12px;
     width: 90%;
     max-width: 400px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 0, 255, 0.1);
     transform: translateY(0);
     transition: transform 0.3s ease;
@@ -498,6 +546,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -523,6 +572,29 @@ body {
 
 .modal-body {
     padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon-cyan) rgba(0, 0, 0, 0.2);
+}
+
+/* Barra de scroll neón personalizada */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--neon-cyan);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-magenta);
 }
 
 .form-group {
@@ -638,14 +710,6 @@ input[type="text"]:focus {
 
 /* Responsive */
 @media (max-width: 768px) {
-    .schedule-header {
-        grid-template-columns: 60px 1fr 1fr 1fr;
-    }
-
-    .schedule-row {
-        grid-template-columns: 60px 1fr 1fr 1fr;
-    }
-
     .machine-header {
         font-size: 0.85rem;
         padding: 0.8rem 0.2rem;
