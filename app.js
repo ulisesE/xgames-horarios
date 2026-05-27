@@ -564,7 +564,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         item.innerHTML = `
                             <div class="agenda-time">🕒 ${booking.time}</div>
                             <div class="agenda-info">
-                                <strong>[${mName}]</strong> 🔒 MANTENIMIENTO / BLOQUEADO
+                                <strong>[${mName}]</strong> 🔒 ${booking.name || 'MANTENIMIENTO / BLOQUEADO'} 
+                                <span class="agenda-duration">(${booking.duration} min)</span>
                             </div>
                         `;
                     } else {
@@ -725,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
             date: inputDate.value,
             name: inputName.value,
             phone: inputPhone.value.trim(),
-            duration: inputBlocked.checked ? 30 : parseInt(duration),
+            duration: parseInt(duration),
             status: inputBlocked.checked ? 'blocked' : 'approved',
             paid: inputPaid.checked
         };
@@ -792,11 +793,13 @@ document.addEventListener('DOMContentLoaded', () => {
     inputBlocked.addEventListener('change', () => {
         const isBlocked = inputBlocked.checked;
         if (isBlocked) {
-            inputName.value = 'Mantenimiento 🛠️';
-            inputName.disabled = true;
-            inputName.required = false;
+            if (!inputName.value || inputName.value === '') {
+                inputName.value = 'Mantenimiento 🛠️';
+            }
+            inputName.disabled = false;
+            inputName.required = true;
             document.getElementById('customer-phone-group').style.display = 'none';
-            document.getElementById('booking-duration-group').style.display = 'none';
+            document.getElementById('booking-duration-group').style.display = 'block';
             document.getElementById('booking-paid-group').style.display = 'none';
             inputPhone.value = '';
             inputPaid.checked = false;
