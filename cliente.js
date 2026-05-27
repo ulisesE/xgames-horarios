@@ -668,7 +668,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         item.innerHTML = `
                             <div class="agenda-time">🕒 ${booking.time}</div>
                             <div class="agenda-info">
-                                <strong>[${mName}]</strong> 🔒 MANTENIMIENTO / BLOQUEADO
+                                <strong>[${mName}]</strong> 🔒 ${booking.name || 'MANTENIMIENTO / BLOQUEADO'} 
+                                <span class="agenda-duration">(${booking.duration} min)</span>
                             </div>
                         `;
                     } else {
