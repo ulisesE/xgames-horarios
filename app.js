@@ -185,6 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const addMachineBtn = document.getElementById('add-machine-btn');
     const machinesListContainer = document.getElementById('machines-list-container');
     
+    // DOM elements for Closed Days
+    const closedDaysListContainer = document.getElementById('closed-days-list-container');
+    const inputClosedDate = document.getElementById('settings-closed-date');
+    const inputClosedReason = document.getElementById('settings-closed-reason');
+    const addClosedDayBtn = document.getElementById('add-closed-day-btn');
+    let tempClosedDays = {};
+    
     // Help Modal elements
     const helpBtn = document.getElementById('help-btn');
     const helpModal = document.getElementById('help-modal');
@@ -478,6 +485,46 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
         document.querySelectorAll('.agenda-item').forEach(el => el.remove());
         document.querySelectorAll('.machine-cell').forEach(el => el.classList.remove('overlapped-cell'));
+
+        const dateStr = formatDate(selectedDate);
+        const closedDays = SettingsService.settings.closedDays || {};
+        const closedReason = closedDays[dateStr];
+
+        // Remover cartel anterior si existe
+        const existingOverlay = document.getElementById('closed-day-overlay');
+        if (existingOverlay) existingOverlay.remove();
+
+        if (closedReason && currentView === 'daily') {
+            const container = document.querySelector('.schedule-container');
+            const overlay = document.createElement('div');
+            overlay.id = 'closed-day-overlay';
+            overlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(10, 10, 15, 0.85);
+                backdrop-filter: blur(8px);
+                z-index: 50;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+                box-sizing: border-box;
+                text-align: center;
+                border: 2px dashed var(--neon-red);
+                border-radius: 8px;
+            `;
+            overlay.innerHTML = `
+                <div class="neon-text-magenta" style="font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 15px var(--neon-red);">🔒 LOCAL CERRADO</div>
+                <div class="neon-text-cyan" style="font-size: 1.4rem; max-width: 500px; line-height: 1.6; text-shadow: 0 0 10px var(--neon-cyan);">${closedReason}</div>
+                <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;">No se pueden agendar o editar reservas para este día.</div>
+            `;
+            container.style.position = 'relative';
+            container.appendChild(overlay);
+        }
         
         const allBookings = await StorageService.getBookings();
         
@@ -517,9 +564,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     block.style.cssText = getBlockStyle(booking.duration);
                     
                     const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
+                    const lockIcon = booking.status === 'blocked' ? '🔒 ' : '';
                     
                     block.innerHTML = `
-                        <div class="booking-name">${paidIcon}${booking.name}</div>
+                        <div class="booking-name">${lockIcon}${paidIcon}${booking.name}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
@@ -597,6 +645,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     listContainer.appendChild(item);
                 }
             });
+
+            // Mostrar cartel de cerrado en las tarjetas de la agenda semanal si aplica
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() + i);
+                const dateStr = formatDate(d);
+                const closedDays = SettingsService.settings.closedDays || {};
+                const closedReason = closedDays[dateStr];
+                
+                if (closedReason) {
+                    const listContainer = document.getElementById(`agenda-list-${dateStr}`);
+                    if (listContainer) {
+                        listContainer.innerHTML = `<div class="agenda-empty-msg" style="color: var(--neon-red); font-weight: bold; display: block; padding: 10px 0;">🔒 CERRADO: ${closedReason}</div>`;
+                    }
+                }
+            }
         }
     }
 
@@ -841,6 +905,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('settings-motd').value = SettingsService.settings.motd || '';
         document.getElementById('settings-logo-url').value = SettingsService.settings.logo || '';
         
+        tempClosedDays = { ...(SettingsService.settings.closedDays || {}) };
+        renderClosedDaysList();
         renderMachinesListForSettings();
         settingsModal.classList.remove('hidden');
     });
@@ -914,6 +980,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function renderClosedDaysList() {
+        closedDaysListContainer.innerHTML = '';
+        const dates = Object.keys(tempClosedDays).sort();
+        if (dates.length === 0) {
+            closedDaysListContainer.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 10px 0;">No hay días cerrados configurados.</div>`;
+            return;
+        }
+
+        dates.forEach(date => {
+            const reason = tempClosedDays[date];
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px; border: 1px solid #222; font-size: 0.85rem; margin-bottom: 5px;';
+            item.innerHTML = `
+                <div>
+                    <strong style="color: var(--neon-magenta);">${date}</strong> - <span style="color: #ccc;">${reason}</span>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm delete-closed-day-btn" data-date="${date}" style="padding: 2px 6px; font-size: 0.75rem;">🗑️</button>
+            `;
+            item.querySelector('.delete-closed-day-btn').addEventListener('click', (e) => {
+                const d = e.currentTarget.dataset.date;
+                delete tempClosedDays[d];
+                renderClosedDaysList();
+            });
+            closedDaysListContainer.appendChild(item);
+        });
+    }
+
+    addClosedDayBtn.addEventListener('click', () => {
+        const dateVal = inputClosedDate.value;
+        const reasonVal = inputClosedReason.value.trim() || 'Cerrado';
+        if (!dateVal) {
+            alert('Por favor, selecciona una fecha válida.');
+            return;
+        }
+        tempClosedDays[dateVal] = reasonVal;
+        inputClosedDate.value = '';
+        inputClosedReason.value = '';
+        renderClosedDaysList();
+    });
+
     settingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = document.getElementById('save-settings-btn');
@@ -939,7 +1045,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const newSettings = {
                 logo: newLogoUrl,
                 motd: newMotd,
-                machines: newMachines
+                machines: newMachines,
+                closedDays: tempClosedDays
             };
 
             await SettingsService.saveSettings(newSettings);

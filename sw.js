@@ -1,4 +1,4 @@
-const CACHE_NAME = 'piu-reservas-v5';
+const CACHE_NAME = 'piu-reservas-v7';
 const urlsToCache = [
   './',
   './index.html',

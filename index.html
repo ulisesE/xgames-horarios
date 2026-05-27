@@ -190,6 +190,24 @@
                         </div>
                     </div>
 
+                    <div class="settings-section">
+                        <h3>Días Cerrados / Feriados</h3>
+                        <div id="closed-days-list-container" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Lista generada dinámicamente -->
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: flex-end; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid #333;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.8rem; color: var(--neon-cyan); display: block; margin-bottom: 5px;">Fecha:</label>
+                                <input type="date" id="settings-closed-date" class="custom-textarea" style="padding: 0.5rem; height: auto; margin: 0;">
+                            </div>
+                            <div style="flex: 2;">
+                                <label style="font-size: 0.8rem; color: var(--neon-cyan); display: block; margin-bottom: 5px;">Motivo:</label>
+                                <input type="text" id="settings-closed-reason" class="custom-textarea" style="padding: 0.5rem; height: auto; margin: 0;" placeholder="Ej. Feriado Nacional">
+                            </div>
+                            <button type="button" id="add-closed-day-btn" class="btn btn-outline" style="height: 38px; margin: 0; padding: 0 15px;">Añadir</button>
+                         </div>
+                    </div>
+
                     <div class="modal-actions" style="margin-top: 20px;">
                         <button type="button" id="cancel-settings-btn" class="btn btn-outline">Cancelar</button>
                         <button type="submit" id="save-settings-btn" class="btn btn-primary">Guardar Cambios</button>
@@ -222,22 +240,24 @@
                     </div>
 
                     <div class="settings-section">
-                        <h3>🛠️ Bloqueo por Mantenimiento</h3>
-                        <p style="margin-bottom: 5px;">Para suspender el uso público de una máquina en un horario específico:</p>
+                        <h3>🛠️ Bloqueo de Horarios y Eventos</h3>
+                        <p style="margin-bottom: 5px;">Para suspender el uso público de una máquina o programar un evento (ej. Torneos o Eventos especiales):</p>
                         <ol style="margin-left: 20px; margin-bottom: 10px;">
                             <li>Haz clic en el horario deseado en el calendario diario.</li>
                             <li>Activa el switch de <strong>"Bloquear Horario (Mantenimiento)"</strong>.</li>
-                            <li>La celda se guardará como <code>status: 'blocked'</code> y se mostrará en gris oscuro con el candado 🔒.</li>
+                            <li><strong>Personalización:</strong> El campo de nombre se mantendrá editable. Si lo deseas puedes borrar "Mantenimiento 🛠️" y escribir un título personalizado como "Torneo de PIU 🏆".</li>
+                            <li><strong>Duración:</strong> Selecciona cualquier duración (60 min, 120 min, etc.) y la celda se expandirá automáticamente a lo largo de las celdas en la cuadrícula diaria.</li>
                         </ol>
                     </div>
 
                     <div class="settings-section">
-                        <h3>⚙️ Ajustes del Sistema</h3>
+                        <h3>⚙️ Ajustes del Sistema y Días Cerrados</h3>
                         <p style="margin-bottom: 5px;">Haz clic en el engranaje (⚙️) para personalizar:</p>
                         <ul style="margin-left: 20px;">
                             <li>Logotipo principal (URL de imagen).</li>
                             <li>Mensaje del Día (MOTD) mostrado al entrar.</li>
-                            <li>Agregar, renombrar o eliminar máquinas y sus imágenes de cabecera.</li>
+                            <li>Agregar, renombrar o eliminar máquinas de baile y sus imágenes de cabecera.</li>
+                            <li><strong>Días Cerrados:</strong> Agrega fechas específicas (ej. Feriados o Eventos a puerta cerrada) con un motivo para bloquear por completo el calendario diario con un cartel neón difuminado y alertar en la vista semanal.</li>
                         </ul>
                     </div>
                 </div>
@@ -245,33 +265,34 @@
                 <!-- Contenido Changelog -->
                 <div id="tab-changelog-content" class="tab-content hidden" style="text-align: left;">
                     <div class="settings-section" style="border-left: 3px solid var(--neon-magenta);">
-                        <h4 style="color: var(--neon-magenta); margin-bottom: 5px;">⚡ VERSIÓN 3.0 (Mayo 2026) - Versión Premium</h4>
+                        <h4 style="color: var(--neon-magenta); margin-bottom: 5px;">⚡ VERSIÓN 4.0 (Mayo 2026) - Bloqueos & Días Cerrados</h4>
                         <ul style="margin-left: 20px; font-size: 0.9rem;">
-                            <li><strong>Responsividad Avanzada:</strong> Modales con scroll interno y barra neón.</li>
-                            <li><strong>Sticky Grid:</strong> Desplazamiento horizontal fluido en móviles con columna de horas fija a la izquierda.</li>
-                            <li><strong>Traslapes (Overlapping):</strong> Fusión y bloqueo automático de celdas intermedias en turnos de larga duración.</li>
-                            <li><strong>Bloqueo de Mantenimiento:</strong> Switch para desactivar celdas con candado visual 🔒.</li>
-                            <li><strong>Ficha de Jugador:</strong> Clic en celdas aprobadas para ver el perfil ciberpunk del cliente.</li>
-                            <li><strong>WhatsApp Directo:</strong> Mensajería rápida para avisar aprobaciones de reservas.</li>
-                            <li><strong>Actualizaciones PWA Forzadas:</strong> skipWaiting y controllerchange para recargas instantáneas al actualizar.</li>
+                            <li><strong>Vinculación Automática de WhatsApp:</strong> El sistema ahora asocia automáticamente el número telefónico del perfil del jugador a todas las solicitudes de reserva de forma reactiva y retroactiva.</li>
+                            <li><strong>Bloqueos Flexibles Expandibles:</strong> Los bloqueos de horario permiten seleccionar duración personalizada (30, 60, 120 mins) y se estiran físicamente en el grid diario con bordes neón.</li>
+                            <li><strong>Nombres Personalizados para Eventos:</strong> Escribe nombres como "Torneo de PIU 🏆" en lugar de "Mantenimiento 🛠️" obligatorios.</li>
+                            <li><strong>Gestión de Días Cerrados:</strong> Panel en Ajustes para cerrar fechas completas, deshabilitando todo el grid del día con un cartel de bloqueo desenfocado y alertas rojas en la agenda semanal.</li>
                         </ul>
                     </div>
 
                     <div class="settings-section" style="border-left: 3px solid var(--neon-cyan);">
-                        <h4 style="color: var(--neon-cyan); margin-bottom: 5px;">⚡ VERSIÓN 2.0 - Ajustes Dinámicos</h4>
+                        <h4 style="color: var(--neon-cyan); margin-bottom: 5px;">⚡ VERSIÓN 3.0 - Versión Premium</h4>
                         <ul style="margin-left: 20px; font-size: 0.9rem;">
-                            <li>Configuración del MOTD global para clientes desde ajustes.</li>
-                            <li>Reemplazo de texto por logotipo de imagen en la cabecera.</li>
-                            <li>Soporte para agregar y eliminar máquinas reactivamente desde el panel.</li>
+                            <li><strong>Responsividad Avanzada:</strong> Modales con scroll interno y barra neón.</li>
+                            <li><strong>Sticky Grid:</strong> Desplazamiento horizontal fluido en móviles con columna de horas fija a la izquierda.</li>
+                            <li><strong>Traslapes (Overlapping):</strong> Fusión y bloqueo automático de celdas intermedias en turnos de larga duración.</li>
+                            <li><strong>Bloqueo de Mantenimiento Básico:</strong> Switch para desactivar celdas con candado visual 🔒 de 30 min.</li>
+                            <li><strong>Ficha de Jugador:</strong> Clic en celdas aprobadas para ver el perfil ciberpunk del cliente.</li>
+                            <li><strong>WhatsApp Directo:</strong> Mensajería rápida para avisar aprobaciones de reservas.</li>
+                            <li><strong>Actualizaciones PWA Forzadas:</strong> skipWaiting y controllerchange para recargas instantáneas.</li>
                         </ul>
                     </div>
 
                     <div class="settings-section" style="border-left: 3px solid var(--neon-yellow);">
-                        <h4 style="color: var(--neon-yellow); margin-bottom: 5px;">⚡ VERSIÓN 1.0 - Core Engine</h4>
+                        <h4 style="color: var(--neon-yellow); margin-bottom: 5px;">⚡ VERSIÓN 1.0 y 2.0 - Core & Ajustes</h4>
                         <ul style="margin-left: 20px; font-size: 0.9rem;">
-                            <li>Cuadrícula horaria de 12:00 PM a 11:30 PM para las máquinas de baile.</li>
                             <li>Base de datos integrada en tiempo real con Firebase Firestore.</li>
-                            <li>Instalación PWA nativa y almacenamiento offline con Service Worker.</li>
+                            <li>Configuración del MOTD global y Logotipo de imagen para la cabecera.</li>
+                            <li>Soporte para agregar y eliminar máquinas y sus imágenes de forma dinámica.</li>
                         </ul>
                     </div>
                 </div>
