@@ -709,7 +709,50 @@ input[type="text"]:focus {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 992px) {
+    .header {
+        padding: 0.8rem 1rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+        text-align: center;
+    }
+
+    .logo {
+        font-size: 1.4rem;
+        letter-spacing: 1px;
+    }
+
+    .header-actions {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .date-display {
+        width: 100%;
+        text-align: center;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+        color: var(--neon-cyan);
+        opacity: 0.9;
+    }
+
+    .header-actions .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+    }
+
     .machine-header {
         font-size: 0.85rem;
         padding: 0.8rem 0.2rem;
@@ -723,14 +766,6 @@ input[type="text"]:focus {
 
     .booking-name {
         font-size: 0.75rem;
-    }
-
-    .logo {
-        font-size: 1.2rem;
-    }
-
-    .header {
-        padding: 1rem;
     }
 }
 
