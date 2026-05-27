@@ -579,6 +579,46 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
         document.querySelectorAll('.agenda-item').forEach(el => el.remove());
         document.querySelectorAll('.machine-cell').forEach(el => el.classList.remove('overlapped-cell'));
+
+        const dateStr = formatDate(selectedDate);
+        const closedDays = SettingsService.settings.closedDays || {};
+        const closedReason = closedDays[dateStr];
+
+        // Remover cartel anterior si existe
+        const existingOverlay = document.getElementById('closed-day-overlay');
+        if (existingOverlay) existingOverlay.remove();
+
+        if (closedReason && currentView === 'daily') {
+            const container = document.querySelector('.schedule-container');
+            const overlay = document.createElement('div');
+            overlay.id = 'closed-day-overlay';
+            overlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(10, 10, 15, 0.85);
+                backdrop-filter: blur(8px);
+                z-index: 50;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+                box-sizing: border-box;
+                text-align: center;
+                border: 2px dashed var(--neon-red);
+                border-radius: 8px;
+            `;
+            overlay.innerHTML = `
+                <div class="neon-text-magenta" style="font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 15px var(--neon-red);">🔒 LOCAL CERRADO</div>
+                <div class="neon-text-cyan" style="font-size: 1.3rem; max-width: 500px; line-height: 1.6; text-shadow: 0 0 10px var(--neon-cyan);">${closedReason}</div>
+                <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;">Todas las máquinas se encuentran deshabilitadas por hoy.</div>
+            `;
+            container.style.position = 'relative';
+            container.appendChild(overlay);
+        }
         
         const allBookings = await StorageService.getBookings();
         
@@ -627,8 +667,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         block.style.cursor = 'default';
                     }
                     
+                    const lockIcon = booking.status === 'blocked' ? '🔒 ' : '';
                     block.innerHTML = `
-                        <div class="booking-name">${booking.name}</div>
+                        <div class="booking-name">${lockIcon}${booking.name}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
@@ -704,6 +745,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     listContainer.appendChild(item);
                 }
             });
+
+            // Mostrar cartel de cerrado en las tarjetas de la agenda semanal si aplica
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() + i);
+                const dateStr = formatDate(d);
+                const closedDays = SettingsService.settings.closedDays || {};
+                const closedReason = closedDays[dateStr];
+                
+                if (closedReason) {
+                    const listContainer = document.getElementById(`agenda-list-${dateStr}`);
+                    if (listContainer) {
+                        listContainer.innerHTML = `<div class="agenda-empty-msg" style="color: var(--neon-red); font-weight: bold; display: block; padding: 10px 0;">🔒 CERRADO: ${closedReason}</div>`;
+                    }
+                }
+            }
         }
     }
 
