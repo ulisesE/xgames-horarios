@@ -442,11 +442,25 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         const duration = document.getElementById('client-booking-duration').value;
+
+        // Obtener teléfono/whatsapp del perfil del usuario logueado antes de enviar la reserva
+        let clientPhone = '';
+        try {
+            const userRef = doc(db, 'users', AuthService.currentUser.username.toLowerCase());
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                clientPhone = userSnap.data().whatsapp || '';
+            }
+        } catch (error) {
+            console.error("Error al obtener el número de WhatsApp del perfil del cliente:", error);
+        }
+
         const booking = {
             machine: clientMachine.value,
             time: clientTime.value,
             date: clientDate.value,
             name: AuthService.currentUser.username, // Usa el nombre logueado
+            phone: clientPhone, // Guardar el número del perfil del cliente
             duration: parseInt(duration),
             status: 'pending', // ESTADO PENDIENTE
             userId: AuthService.currentUser.username
