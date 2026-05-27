@@ -1,4 +1,4 @@
-import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, setDoc } from './firebase-config.js';
+import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, setDoc, getDoc } from './firebase-config.js';
 
 /**
  * Utility to calculate times covered by a booking's duration
@@ -624,6 +624,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Forzar actualización del DOM para el estado del switch
             inputBlocked.dispatchEvent(new Event('change'));
+
+            // Si la reserva no tiene teléfono pero hay un nombre de cliente, buscarlo en su perfil
+            if (!existingBooking.phone && existingBooking.name) {
+                const userRef = doc(db, 'users', existingBooking.name.toLowerCase());
+                getDoc(userRef).then((userSnap) => {
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        if (userData.whatsapp) {
+                            inputPhone.value = userData.whatsapp;
+                            // Actualizar la reserva en Firestore de fondo para persistir el número
+                            updateDoc(doc(db, 'bookings', existingBooking.id), { phone: userData.whatsapp })
+                                .catch(err => console.error("Error al actualizar teléfono en reserva:", err));
+                        }
+                    }
+                }).catch(err => {
+                    console.error("Error al obtener perfil del usuario para teléfono:", err);
+                });
+            }
 
             if (existingBooking.status !== 'blocked') {
                 whatsappBtn.classList.remove('hidden');
