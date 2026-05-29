@@ -1,6 +1,41 @@
 import { db, collection, onSnapshot, doc, getDoc, setDoc, addDoc } from './firebase-config.js';
 
 /**
+ * Utility to calculate times covered by a booking's duration
+ */
+function getTimesForDuration(startTime, duration) {
+    let [time, modifier] = startTime.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (hours === 12) {
+        hours = modifier === 'AM' ? 0 : 12;
+    } else if (modifier === 'PM') {
+        hours += 12;
+    }
+    
+    const times = [];
+    let currentMinutes = hours * 60 + minutes;
+    
+    const numSlots = duration / 30;
+    for (let i = 1; i < numSlots; i++) {
+        const nextMins = currentMinutes + i * 30;
+        const nextHour = Math.floor(nextMins / 60);
+        const nextMin = nextMins % 60 === 0 ? '00' : '30';
+        
+        let displayHour = nextHour;
+        let ampm = 'AM';
+        if (nextHour >= 12) {
+            ampm = 'PM';
+            if (nextHour > 12) displayHour = nextHour - 12;
+        } else if (nextHour === 0) {
+            displayHour = 12;
+        }
+        times.push(`${displayHour}:${nextMin} ${ampm}`);
+    }
+    return times;
+}
+
+
+/**
  * Settings Service
  */
 const SettingsService = {
@@ -144,6 +179,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientDate = document.getElementById('client-booking-date');
     const clientDisplayMachine = document.getElementById('client-display-machine');
     const clientDisplayTime = document.getElementById('client-display-time');
+
+    // User Account Modal
+    const myAccountModal = document.getElementById('my-account-modal');
+    const closeAccountBtn = document.getElementById('close-account-btn');
+    const tabBookingsBtn = document.getElementById('tab-bookings-btn');
+    const tabProfileBtn = document.getElementById('tab-profile-btn');
+    const tabBookingsContent = document.getElementById('tab-bookings-content');
+    const tabProfileContent = document.getElementById('tab-profile-content');
+    const userBookingsList = document.getElementById('user-bookings-list');
+    const profileForm = document.getElementById('profile-form');
+    const profileWhatsapp = document.getElementById('profile-whatsapp');
+    const profileNick = document.getElementById('profile-nick');
+    const profileLevel = document.getElementById('profile-level');
+    const profileSongs = document.getElementById('profile-songs');
+
+    // Player Card Modal
+    const playerCardModal = document.getElementById('player-card-modal');
+    const closePlayerCardBtn = document.getElementById('close-player-card-btn');
+    const cardNick = document.getElementById('card-nick');
+    const cardLevel = document.getElementById('card-level');
+    const cardUsername = document.getElementById('card-username');
+    const cardSongs = document.getElementById('card-songs');
 
     // Estado de Fechas
     let selectedDate = new Date();
@@ -385,11 +442,25 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         const duration = document.getElementById('client-booking-duration').value;
+
+        // Obtener teléfono/whatsapp del perfil del usuario logueado antes de enviar la reserva
+        let clientPhone = '';
+        try {
+            const userRef = doc(db, 'users', AuthService.currentUser.username.toLowerCase());
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                clientPhone = userSnap.data().whatsapp || '';
+            }
+        } catch (error) {
+            console.error("Error al obtener el número de WhatsApp del perfil del cliente:", error);
+        }
+
         const booking = {
             machine: clientMachine.value,
             time: clientTime.value,
             date: clientDate.value,
             name: AuthService.currentUser.username, // Usa el nombre logueado
+            phone: clientPhone, // Guardar el número del perfil del cliente
             duration: parseInt(duration),
             status: 'pending', // ESTADO PENDIENTE
             userId: AuthService.currentUser.username
@@ -507,11 +578,72 @@ document.addEventListener('DOMContentLoaded', () => {
     async function renderBookings() {
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
         document.querySelectorAll('.agenda-item').forEach(el => el.remove());
+        document.querySelectorAll('.machine-cell').forEach(el => el.classList.remove('overlapped-cell'));
+
+        const dateStr = formatDate(selectedDate);
+        const closedDays = SettingsService.settings.closedDays || {};
+        const closedReason = closedDays[dateStr];
+
+        // Remover cartel anterior si existe
+        const existingOverlay = document.getElementById('closed-day-overlay');
+        if (existingOverlay) existingOverlay.remove();
+        
+        const container = document.querySelector('.schedule-container');
+        if (container) {
+            container.classList.remove('closed-schedule');
+        }
+
+        if (closedReason && currentView === 'daily') {
+            if (container) {
+                container.classList.add('closed-schedule');
+                const overlay = document.createElement('div');
+                overlay.id = 'closed-day-overlay';
+                overlay.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: ${container.scrollWidth}px;
+                    height: ${container.scrollHeight}px;
+                    background: rgba(10, 10, 15, 0.85);
+                    backdrop-filter: blur(8px);
+                    z-index: 50;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                    text-align: center;
+                    border: 2px dashed var(--neon-red);
+                    border-radius: 8px;
+                `;
+                overlay.innerHTML = `
+                    <div class="neon-text-magenta" style="font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 15px var(--neon-red);">🔒 LOCAL CERRADO</div>
+                    <div class="neon-text-cyan" style="font-size: 1.3rem; max-width: 500px; line-height: 1.6; text-shadow: 0 0 10px var(--neon-cyan);">${closedReason}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;">Todas las máquinas se encuentran deshabilitadas por hoy.</div>
+                `;
+                container.style.position = 'relative';
+                container.appendChild(overlay);
+            }
+        }
         
         const allBookings = await StorageService.getBookings();
         
         if (currentView === 'daily') {
             const bookings = allBookings.filter(b => b.date === formatDate(selectedDate));
+            
+            // Primera pasada: Calcular e inhabilitar celdas traslapadas por reservas largas aprobadas o bloqueadas
+            bookings.forEach(booking => {
+                if ((booking.status === 'approved' || booking.status === 'blocked') && booking.duration > 30) {
+                    const coveredTimes = getTimesForDuration(booking.time, booking.duration);
+                    coveredTimes.forEach(t => {
+                        const ovCell = document.querySelector(`.machine-cell[data-machine="${booking.machine}"][data-time="${t}"]`);
+                        if (ovCell) {
+                            ovCell.classList.add('overlapped-cell');
+                        }
+                    });
+                }
+            });
             
             bookings.forEach(booking => {
                 const cellSelector = `.machine-cell[data-machine="${booking.machine}"][data-time="${booking.time}"]`;
@@ -526,15 +658,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         block.classList.add('booking-pending');
                     } else if (booking.status === 'rejected') {
                         block.classList.add('booking-rejected');
-                        // Opcional: no renderizar las rechazadas
-                        // return; 
+                    } else if (booking.status === 'blocked') {
+                        block.className = 'booking-block booking-blocked';
                     }
 
                     block.style.cssText = getBlockStyle(booking.duration);
-                    block.style.cursor = 'default';
                     
+                    if (booking.status === 'approved') {
+                        block.style.cursor = 'pointer';
+                        block.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openPlayerCard(booking.userId || booking.name);
+                        });
+                    } else {
+                        block.style.cursor = 'default';
+                    }
+                    
+                    const lockIcon = booking.status === 'blocked' ? '🔒 ' : '';
                     block.innerHTML = `
-                        <div class="booking-name">${booking.name}</div>
+                        <div class="booking-name">${lockIcon}${booking.name}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
@@ -567,29 +709,65 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (emptyMsg) emptyMsg.style.display = 'none';
                     
                     const item = document.createElement('div');
-                    const colorIndex = (parseInt(booking.machine) % 3) || 3;
-                    item.className = `agenda-item machine-${colorIndex}`;
-                    
-                    if (booking.status === 'pending') {
-                        item.classList.add('pending-agenda');
-                    } else if (booking.status === 'rejected') {
-                        item.classList.add('rejected-agenda');
-                    }
-
                     const mName = getMachineName(booking.machine);
+
+                    if (booking.status === 'blocked') {
+                        item.className = 'agenda-item blocked-agenda';
+                        item.innerHTML = `
+                            <div class="agenda-time">🕒 ${booking.time}</div>
+                            <div class="agenda-info">
+                                <strong>[${mName}]</strong> 🔒 ${booking.name || 'MANTENIMIENTO / BLOQUEADO'} 
+                                <span class="agenda-duration">(${booking.duration} min)</span>
+                            </div>
+                        `;
+                    } else {
+                        const colorIndex = (parseInt(booking.machine) % 3) || 3;
+                        item.className = `agenda-item machine-${colorIndex}`;
+                        
+                        if (booking.status === 'pending') {
+                            item.classList.add('pending-agenda');
+                        } else if (booking.status === 'rejected') {
+                            item.classList.add('rejected-agenda');
+                        }
+                        
+                        if (booking.status === 'approved') {
+                            item.style.cursor = 'pointer';
+                            item.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                openPlayerCard(booking.userId || booking.name);
+                            });
+                        } else {
+                            item.style.cursor = 'default';
+                        }
+                        
+                        item.innerHTML = `
+                            <div class="agenda-time">🕒 ${booking.time}</div>
+                            <div class="agenda-info">
+                                <strong>[${mName}]</strong> ${booking.name} 
+                                <span class="agenda-duration">(${booking.duration} min)</span>
+                            </div>
+                        `;
+                    }
                     
-                    item.innerHTML = `
-                        <div class="agenda-time">🕒 ${booking.time}</div>
-                        <div class="agenda-info">
-                            <strong>[${mName}]</strong> ${booking.name} 
-                            <span class="agenda-duration">(${booking.duration} min)</span>
-                        </div>
-                    `;
-                    
-                    item.style.cursor = 'default';
                     listContainer.appendChild(item);
                 }
             });
+
+            // Mostrar cartel de cerrado en las tarjetas de la agenda semanal si aplica
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() + i);
+                const dateStr = formatDate(d);
+                const closedDays = SettingsService.settings.closedDays || {};
+                const closedReason = closedDays[dateStr];
+                
+                if (closedReason) {
+                    const listContainer = document.getElementById(`agenda-list-${dateStr}`);
+                    if (listContainer) {
+                        listContainer.innerHTML = `<div class="agenda-empty-msg" style="color: var(--neon-red); font-weight: bold; display: block; padding: 10px 0;">🔒 CERRADO: ${closedReason}</div>`;
+                    }
+                }
+            }
         }
     }
 
@@ -604,6 +782,213 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // ==========================================
+    // LÓGICA DE MI CUENTA Y FICHA DE JUGADOR
+    // ==========================================
+
+    // Alternancia de pestañas
+    tabBookingsBtn.addEventListener('click', () => {
+        tabBookingsBtn.classList.add('active');
+        tabProfileBtn.classList.remove('active');
+        tabBookingsContent.classList.remove('hidden');
+        tabProfileContent.classList.add('hidden');
+    });
+
+    tabProfileBtn.addEventListener('click', () => {
+        tabProfileBtn.classList.add('active');
+        tabBookingsBtn.classList.remove('active');
+        tabProfileContent.classList.remove('hidden');
+        tabBookingsContent.classList.add('hidden');
+    });
+
+    // Cargar reservas del usuario logueado con opción de cancelar pendientes
+    async function loadUserBookings() {
+        userBookingsList.innerHTML = '<div style="text-align:center; padding: 20px; color:var(--text-muted);">Cargando tus reservas...</div>';
+        
+        try {
+            const allBookings = await StorageService.getBookings();
+            const userBookings = allBookings.filter(b => 
+                (b.userId && b.userId.toLowerCase() === AuthService.currentUser.username.toLowerCase()) ||
+                (b.name && b.name.toLowerCase() === AuthService.currentUser.username.toLowerCase())
+            );
+            
+            userBookings.sort((a,b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+            
+            userBookingsList.innerHTML = '';
+            if (userBookings.length === 0) {
+                userBookingsList.innerHTML = '<div style="text-align:center; padding: 20px; color:var(--text-muted);">No tienes reservas o solicitudes.</div>';
+                return;
+            }
+            
+            for (let b of userBookings) {
+                const item = document.createElement('div');
+                item.className = 'user-booking-item';
+                
+                const mName = getMachineName(b.machine);
+                let statusClass = 'pending';
+                let statusText = '⏱️ Pendiente';
+                
+                if (b.status === 'approved') {
+                    statusClass = 'approved';
+                    statusText = '💰 Aprobada';
+                }
+                
+                let cancelBtnHtml = '';
+                if (b.status === 'pending') {
+                    cancelBtnHtml = `<button type="button" class="btn btn-danger btn-sm cancel-booking-btn" data-id="${b.id}">Cancelar</button>`;
+                }
+                
+                item.innerHTML = `
+                    <div class="user-booking-details">
+                        <div class="user-booking-title">[${mName}] - ${b.time}</div>
+                        <div class="user-booking-meta">Fecha: ${b.date} | Duración: ${b.duration} min</div>
+                        <div style="margin-top: 5px;">
+                            <span class="user-booking-status ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                    ${cancelBtnHtml}
+                `;
+                
+                if (b.status === 'pending') {
+                    item.querySelector('.cancel-booking-btn').addEventListener('click', async (e) => {
+                        const id = e.target.dataset.id;
+                        if (confirm('¿Estás seguro de que deseas cancelar esta solicitud?')) {
+                            e.target.textContent = 'Cancelando...';
+                            e.target.disabled = true;
+                            
+                            try {
+                                const { deleteDoc, doc } = await import('./firebase-config.js');
+                                await deleteDoc(doc(db, 'bookings', id));
+                                loadUserBookings();
+                            } catch (err) {
+                                console.error(err);
+                                alert('Error al cancelar la reserva.');
+                                loadUserBookings();
+                            }
+                        }
+                    });
+                }
+                
+                userBookingsList.appendChild(item);
+            }
+        } catch (error) {
+            console.error("Error loading user bookings", error);
+            userBookingsList.innerHTML = '<div style="text-align:center; padding: 20px; color:var(--neon-red);">Error al cargar tus reservas.</div>';
+        }
+    }
+
+    // Cargar perfil del jugador en el formulario
+    async function loadUserProfile() {
+        if (!AuthService.currentUser) return;
+        
+        try {
+            const userRef = doc(db, 'users', AuthService.currentUser.username.toLowerCase());
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                profileWhatsapp.value = data.whatsapp || '';
+                profileNick.value = data.nick || '';
+                profileLevel.value = data.level || '';
+                profileSongs.value = data.songs || '';
+            }
+        } catch (error) {
+            console.error("Error loading profile", error);
+        }
+    }
+
+    // Guardar perfil del jugador
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = profileForm.querySelector('button[type="submit"]');
+        const origText = submitBtn.textContent;
+        submitBtn.textContent = 'Guardando...';
+        submitBtn.disabled = true;
+        
+        const nick = profileNick.value.trim();
+        const level = profileLevel.value.trim();
+        const whatsapp = profileWhatsapp.value.trim();
+        const songs = profileSongs.value.trim();
+        
+        try {
+            const userRef = doc(db, 'users', AuthService.currentUser.username.toLowerCase());
+            const userSnap = await getDoc(userRef);
+            const currentPin = userSnap.exists() ? userSnap.data().pin : '1234';
+            
+            const updatedProfile = {
+                username: AuthService.currentUser.username,
+                pin: currentPin,
+                nick: nick,
+                level: level,
+                whatsapp: whatsapp,
+                songs: songs
+            };
+            
+            await setDoc(userRef, updatedProfile);
+            alert('¡Tu perfil arcade se ha guardado exitosamente!');
+        } catch (error) {
+            console.error("Error saving profile", error);
+            alert('Hubo un error al guardar el perfil.');
+        } finally {
+            submitBtn.textContent = origText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Abrir cuenta al dar clic en span userDisplay
+    userDisplay.addEventListener('click', () => {
+        if (!AuthService.currentUser) return;
+        myAccountModal.classList.remove('hidden');
+        tabBookingsBtn.click();
+        loadUserBookings();
+        loadUserProfile();
+    });
+
+    // Abrir Ficha de Jugador Social (Pública)
+    async function openPlayerCard(userId) {
+        if (!AuthService.currentUser) {
+            loginModal.classList.remove('hidden');
+            return;
+        }
+        
+        cardNick.textContent = 'Cargando...';
+        cardLevel.textContent = '';
+        cardUsername.textContent = userId;
+        cardSongs.textContent = '';
+        
+        playerCardModal.classList.remove('hidden');
+        
+        try {
+            const userRef = doc(db, 'users', userId.toLowerCase());
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                cardNick.textContent = data.nick || data.username || userId;
+                cardLevel.textContent = data.level ? `Nivel: ${data.level}` : 'Nivel no especificado';
+                cardUsername.textContent = data.username || userId;
+                cardSongs.textContent = data.songs || 'Ninguna registrada';
+            } else {
+                cardNick.textContent = userId;
+                cardLevel.textContent = 'Sin perfil configurado';
+                cardSongs.textContent = 'Ninguna registrada';
+            }
+        } catch (error) {
+            console.error("Error loading social card", error);
+            cardNick.textContent = 'Error al cargar';
+        }
+    }
+
+    // Cerrar Modales
+    closeAccountBtn.addEventListener('click', () => myAccountModal.classList.add('hidden'));
+    closePlayerCardBtn.addEventListener('click', () => playerCardModal.classList.add('hidden'));
+
+    myAccountModal.addEventListener('click', (e) => {
+        if (e.target === myAccountModal) myAccountModal.classList.add('hidden');
+    });
+
+    playerCardModal.addEventListener('click', (e) => {
+        if (e.target === playerCardModal) playerCardModal.classList.add('hidden');
+    });
+
     initPWA();
 });
 
@@ -613,6 +998,15 @@ function initPWA() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .catch(err => console.log('Error SW:', err));
+
+        // Escucha cambios del Service Worker para forzar actualización de caché y recargar
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                window.location.reload();
+                refreshing = true;
+            }
+        });
     }
 
     const installBtn = document.getElementById('install-btn');

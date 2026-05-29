@@ -1,4 +1,39 @@
-import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, setDoc } from './firebase-config.js';
+import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, setDoc, getDoc } from './firebase-config.js';
+
+/**
+ * Utility to calculate times covered by a booking's duration
+ */
+function getTimesForDuration(startTime, duration) {
+    let [time, modifier] = startTime.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (hours === 12) {
+        hours = modifier === 'AM' ? 0 : 12;
+    } else if (modifier === 'PM') {
+        hours += 12;
+    }
+    
+    const times = [];
+    let currentMinutes = hours * 60 + minutes;
+    
+    const numSlots = duration / 30;
+    for (let i = 1; i < numSlots; i++) {
+        const nextMins = currentMinutes + i * 30;
+        const nextHour = Math.floor(nextMins / 60);
+        const nextMin = nextMins % 60 === 0 ? '00' : '30';
+        
+        let displayHour = nextHour;
+        let ampm = 'AM';
+        if (nextHour >= 12) {
+            ampm = 'PM';
+            if (nextHour > 12) displayHour = nextHour - 12;
+        } else if (nextHour === 0) {
+            displayHour = 12;
+        }
+        times.push(`${displayHour}:${nextMin} ${ampm}`);
+    }
+    return times;
+}
+
 
 /**
  * Settings Service
@@ -133,6 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputId = document.getElementById('booking-id');
     const inputName = document.getElementById('customer-name');
     const inputPaid = document.getElementById('booking-paid');
+    const inputPhone = document.getElementById('customer-phone');
+    const inputBlocked = document.getElementById('booking-blocked');
+    const whatsappBtn = document.getElementById('whatsapp-btn');
     const deleteBtn = document.getElementById('delete-btn');
     const approveBtn = document.getElementById('approve-btn');
     const rejectBtn = document.getElementById('reject-btn');
@@ -147,6 +185,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const addMachineBtn = document.getElementById('add-machine-btn');
     const machinesListContainer = document.getElementById('machines-list-container');
     
+    // DOM elements for Closed Days
+    const closedDaysListContainer = document.getElementById('closed-days-list-container');
+    const inputClosedDate = document.getElementById('settings-closed-date');
+    const inputClosedReason = document.getElementById('settings-closed-reason');
+    const addClosedDayBtn = document.getElementById('add-closed-day-btn');
+    let tempClosedDays = {};
+    
+    // Help Modal elements
+    const helpBtn = document.getElementById('help-btn');
+    const helpModal = document.getElementById('help-modal');
+    const closeHelpBtn = document.getElementById('close-help-btn');
+    const tabManualBtn = document.getElementById('tab-manual-btn');
+    const tabChangelogBtn = document.getElementById('tab-changelog-btn');
+    const tabManualContent = document.getElementById('tab-manual-content');
+    const tabChangelogContent = document.getElementById('tab-changelog-content');
+
     // Header Logo element
     const headerLogo = document.querySelector('.logo');
 
@@ -430,11 +484,71 @@ document.addEventListener('DOMContentLoaded', () => {
     async function renderBookings() {
         document.querySelectorAll('.booking-block').forEach(el => el.remove());
         document.querySelectorAll('.agenda-item').forEach(el => el.remove());
+        document.querySelectorAll('.machine-cell').forEach(el => el.classList.remove('overlapped-cell'));
+
+        const dateStr = formatDate(selectedDate);
+        const closedDays = SettingsService.settings.closedDays || {};
+        const closedReason = closedDays[dateStr];
+
+        // Remover cartel anterior si existe
+        const existingOverlay = document.getElementById('closed-day-overlay');
+        if (existingOverlay) existingOverlay.remove();
+        
+        const container = document.querySelector('.schedule-container');
+        if (container) {
+            container.classList.remove('closed-schedule');
+        }
+
+        if (closedReason && currentView === 'daily') {
+            if (container) {
+                container.classList.add('closed-schedule');
+                const overlay = document.createElement('div');
+                overlay.id = 'closed-day-overlay';
+                overlay.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: ${container.scrollWidth}px;
+                    height: ${container.scrollHeight}px;
+                    background: rgba(10, 10, 15, 0.85);
+                    backdrop-filter: blur(8px);
+                    z-index: 50;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                    text-align: center;
+                    border: 2px dashed var(--neon-red);
+                    border-radius: 8px;
+                `;
+            overlay.innerHTML = `
+                <div class="neon-text-magenta" style="font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 15px var(--neon-red);">🔒 LOCAL CERRADO</div>
+                <div class="neon-text-cyan" style="font-size: 1.4rem; max-width: 500px; line-height: 1.6; text-shadow: 0 0 10px var(--neon-cyan);">${closedReason}</div>
+                <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;">No se pueden agendar o editar reservas para este día.</div>
+            `;
+            container.style.position = 'relative';
+            container.appendChild(overlay);
+        }
         
         const allBookings = await StorageService.getBookings();
         
         if (currentView === 'daily') {
             const bookings = allBookings.filter(b => b.date === formatDate(selectedDate));
+            
+            // Primera pasada: Calcular e inhabilitar celdas traslapadas por reservas largas aprobadas o bloqueadas
+            bookings.forEach(booking => {
+                if ((booking.status === 'approved' || booking.status === 'blocked') && booking.duration > 30) {
+                    const coveredTimes = getTimesForDuration(booking.time, booking.duration);
+                    coveredTimes.forEach(t => {
+                        const ovCell = document.querySelector(`.machine-cell[data-machine="${booking.machine}"][data-time="${t}"]`);
+                        if (ovCell) {
+                            ovCell.classList.add('overlapped-cell');
+                        }
+                    });
+                }
+            });
             
             bookings.forEach(booking => {
                 const cellSelector = `.machine-cell[data-machine="${booking.machine}"][data-time="${booking.time}"]`;
@@ -449,16 +563,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         block.classList.add('booking-pending');
                     } else if (booking.status === 'rejected') {
                         block.classList.add('booking-rejected');
-                        // No mostrar rechazadas o mostrarlas atenuadas
-                        // return; 
+                    } else if (booking.status === 'blocked') {
+                        block.className = 'booking-block booking-blocked';
                     }
 
                     block.style.cssText = getBlockStyle(booking.duration);
                     
                     const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
+                    const lockIcon = booking.status === 'blocked' ? '🔒 ' : '';
                     
                     block.innerHTML = `
-                        <div class="booking-name">${paidIcon}${booking.name}</div>
+                        <div class="booking-name">${lockIcon}${paidIcon}${booking.name}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
@@ -496,25 +611,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (emptyMsg) emptyMsg.style.display = 'none';
                     
                     const item = document.createElement('div');
-                    const colorIndex = (parseInt(booking.machine) % 3) || 3;
-                    item.className = `agenda-item machine-${colorIndex}`;
-                    
-                    if (booking.status === 'pending') {
-                        item.classList.add('pending-agenda');
-                    } else if (booking.status === 'rejected') {
-                        item.classList.add('rejected-agenda');
-                    }
-                    
                     const mName = getMachineName(booking.machine);
-                    const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
-                    
-                    item.innerHTML = `
-                        <div class="agenda-time">🕒 ${booking.time}</div>
-                        <div class="agenda-info">
-                            <strong>[${mName}]</strong> ${paidIcon}${booking.name} 
-                            <span class="agenda-duration">(${booking.duration} min)</span>
-                        </div>
-                    `;
+
+                    if (booking.status === 'blocked') {
+                        item.className = 'agenda-item blocked-agenda';
+                        item.innerHTML = `
+                            <div class="agenda-time">🕒 ${booking.time}</div>
+                            <div class="agenda-info">
+                                <strong>[${mName}]</strong> 🔒 ${booking.name || 'MANTENIMIENTO / BLOQUEADO'} 
+                                <span class="agenda-duration">(${booking.duration} min)</span>
+                            </div>
+                        `;
+                    } else {
+                        const colorIndex = (parseInt(booking.machine) % 3) || 3;
+                        item.className = `agenda-item machine-${colorIndex}`;
+                        
+                        if (booking.status === 'pending') {
+                            item.classList.add('pending-agenda');
+                        } else if (booking.status === 'rejected') {
+                            item.classList.add('rejected-agenda');
+                        }
+                        
+                        const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
+                        
+                        item.innerHTML = `
+                            <div class="agenda-time">🕒 ${booking.time}</div>
+                            <div class="agenda-info">
+                                <strong>[${mName}]</strong> ${paidIcon}${booking.name} 
+                                <span class="agenda-duration">(${booking.duration} min)</span>
+                            </div>
+                        `;
+                    }
                     
                     item.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -524,6 +651,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     listContainer.appendChild(item);
                 }
             });
+
+            // Mostrar cartel de cerrado en las tarjetas de la agenda semanal si aplica
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() + i);
+                const dateStr = formatDate(d);
+                const closedDays = SettingsService.settings.closedDays || {};
+                const closedReason = closedDays[dateStr];
+                
+                if (closedReason) {
+                    const listContainer = document.getElementById(`agenda-list-${dateStr}`);
+                    if (listContainer) {
+                        listContainer.innerHTML = `<div class="agenda-empty-msg" style="color: var(--neon-red); font-weight: bold; display: block; padding: 10px 0;">🔒 CERRADO: ${closedReason}</div>`;
+                    }
+                }
+            }
         }
     }
 
@@ -547,6 +690,36 @@ document.addEventListener('DOMContentLoaded', () => {
             inputMachine.value = existingBooking.machine;
             document.getElementById('booking-duration').value = existingBooking.duration;
             inputPaid.checked = !!existingBooking.paid;
+            inputPhone.value = existingBooking.phone || '';
+            inputBlocked.checked = existingBooking.status === 'blocked';
+            
+            // Forzar actualización del DOM para el estado del switch
+            inputBlocked.dispatchEvent(new Event('change'));
+
+            // Si la reserva no tiene teléfono pero hay un nombre de cliente, buscarlo en su perfil
+            if (!existingBooking.phone && existingBooking.name) {
+                const userRef = doc(db, 'users', existingBooking.name.toLowerCase());
+                getDoc(userRef).then((userSnap) => {
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        if (userData.whatsapp) {
+                            inputPhone.value = userData.whatsapp;
+                            // Actualizar la reserva en Firestore de fondo para persistir el número
+                            updateDoc(doc(db, 'bookings', existingBooking.id), { phone: userData.whatsapp })
+                                .catch(err => console.error("Error al actualizar teléfono en reserva:", err));
+                        }
+                    }
+                }).catch(err => {
+                    console.error("Error al obtener perfil del usuario para teléfono:", err);
+                });
+            }
+
+            if (existingBooking.status !== 'blocked') {
+                whatsappBtn.classList.remove('hidden');
+            } else {
+                whatsappBtn.classList.add('hidden');
+            }
+            
             deleteBtn.classList.remove('hidden');
             
             displayMachine.innerHTML = `
@@ -571,6 +744,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             inputId.value = '';
             inputName.value = '';
+            inputPhone.value = '';
+            inputBlocked.checked = false;
+            inputBlocked.dispatchEvent(new Event('change'));
+            whatsappBtn.classList.add('hidden');
+            
             document.getElementById('booking-duration').value = '30';
             inputPaid.checked = false;
             
@@ -617,8 +795,9 @@ document.addEventListener('DOMContentLoaded', () => {
             time: inputTime.value,
             date: inputDate.value,
             name: inputName.value,
+            phone: inputPhone.value.trim(),
             duration: parseInt(duration),
-            status: 'approved',
+            status: inputBlocked.checked ? 'blocked' : 'approved',
             paid: inputPaid.checked
         };
 
@@ -639,6 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
             time: inputTime.value,
             date: inputDate.value,
             name: inputName.value,
+            phone: inputPhone.value.trim(),
             duration: parseInt(duration),
             status: 'approved',
             paid: inputPaid.checked
@@ -679,6 +859,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Lógica dinámica para switch de bloqueo
+    inputBlocked.addEventListener('change', () => {
+        const isBlocked = inputBlocked.checked;
+        if (isBlocked) {
+            if (!inputName.value || inputName.value === '') {
+                inputName.value = 'Mantenimiento 🛠️';
+            }
+            inputName.disabled = false;
+            inputName.required = true;
+            document.getElementById('customer-phone-group').style.display = 'none';
+            document.getElementById('booking-duration-group').style.display = 'block';
+            document.getElementById('booking-paid-group').style.display = 'none';
+            inputPhone.value = '';
+            inputPaid.checked = false;
+        } else {
+            if (inputName.value === 'Mantenimiento 🛠️') {
+                inputName.value = '';
+            }
+            inputName.disabled = false;
+            inputName.required = true;
+            document.getElementById('customer-phone-group').style.display = 'block';
+            document.getElementById('booking-duration-group').style.display = 'block';
+            document.getElementById('booking-paid-group').style.display = 'flex';
+        }
+    });
+
+    // Botón de WhatsApp
+    whatsappBtn.addEventListener('click', () => {
+        const phone = inputPhone.value.trim();
+        const name = inputName.value.trim();
+        const time = inputTime.value;
+        const date = inputDate.value;
+        const machineName = getMachineName(inputMachine.value);
+        
+        if (!phone) {
+            alert('Por favor, ingresa un número de teléfono para enviar la notificación.');
+            return;
+        }
+        
+        const cleanPhone = phone.replace(/\D/g, '');
+        const message = `¡Hola ${name}! Tu reserva en XGames Barcade para la máquina ${machineName} a las ${time} del día ${date} ha sido APROBADA con éxito. ¡Prepárate para bailar! 🕹️💃`;
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+    });
+
     // ==========================================
     // SETTINGS MODAL LOGIC
     // ==========================================
@@ -686,6 +911,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('settings-motd').value = SettingsService.settings.motd || '';
         document.getElementById('settings-logo-url').value = SettingsService.settings.logo || '';
         
+        tempClosedDays = { ...(SettingsService.settings.closedDays || {}) };
+        renderClosedDaysList();
         renderMachinesListForSettings();
         settingsModal.classList.remove('hidden');
     });
@@ -759,6 +986,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function renderClosedDaysList() {
+        closedDaysListContainer.innerHTML = '';
+        const dates = Object.keys(tempClosedDays).sort();
+        if (dates.length === 0) {
+            closedDaysListContainer.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 10px 0;">No hay días cerrados configurados.</div>`;
+            return;
+        }
+
+        dates.forEach(date => {
+            const reason = tempClosedDays[date];
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px; border: 1px solid #222; font-size: 0.85rem; margin-bottom: 5px;';
+            item.innerHTML = `
+                <div>
+                    <strong style="color: var(--neon-magenta);">${date}</strong> - <span style="color: #ccc;">${reason}</span>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm delete-closed-day-btn" data-date="${date}" style="padding: 2px 6px; font-size: 0.75rem;">🗑️</button>
+            `;
+            item.querySelector('.delete-closed-day-btn').addEventListener('click', (e) => {
+                const d = e.currentTarget.dataset.date;
+                delete tempClosedDays[d];
+                renderClosedDaysList();
+            });
+            closedDaysListContainer.appendChild(item);
+        });
+    }
+
+    addClosedDayBtn.addEventListener('click', () => {
+        const dateVal = inputClosedDate.value;
+        const reasonVal = inputClosedReason.value.trim() || 'Cerrado';
+        if (!dateVal) {
+            alert('Por favor, selecciona una fecha válida.');
+            return;
+        }
+        tempClosedDays[dateVal] = reasonVal;
+        inputClosedDate.value = '';
+        inputClosedReason.value = '';
+        renderClosedDaysList();
+    });
+
     settingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = document.getElementById('save-settings-btn');
@@ -784,7 +1051,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const newSettings = {
                 logo: newLogoUrl,
                 motd: newMotd,
-                machines: newMachines
+                machines: newMachines,
+                closedDays: tempClosedDays
             };
 
             await SettingsService.saveSettings(newSettings);
@@ -797,6 +1065,38 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
         }
+    });
+
+    // ==========================================
+    // HELP MODAL LOGIC (MANUAL & CHANGELOG)
+    // ==========================================
+    helpBtn.addEventListener('click', () => {
+        helpModal.classList.remove('hidden');
+        tabManualBtn.click(); // Reset to manual tab
+    });
+
+    function closeHelp() {
+        helpModal.classList.add('hidden');
+    }
+
+    closeHelpBtn.addEventListener('click', closeHelp);
+    helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) closeHelp();
+    });
+
+    // Tab switching inside Help Modal
+    tabManualBtn.addEventListener('click', () => {
+        tabManualBtn.classList.add('active');
+        tabChangelogBtn.classList.remove('active');
+        tabManualContent.classList.remove('hidden');
+        tabChangelogContent.classList.add('hidden');
+    });
+
+    tabChangelogBtn.addEventListener('click', () => {
+        tabChangelogBtn.classList.add('active');
+        tabManualBtn.classList.remove('active');
+        tabChangelogContent.classList.remove('hidden');
+        tabManualContent.classList.add('hidden');
     });
 
     // ==========================================
@@ -822,6 +1122,15 @@ function initPWA() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .catch(err => console.log('Error SW:', err));
+
+        // Escucha cambios del Service Worker para forzar actualización de caché y recargar
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                window.location.reload();
+                refreshing = true;
+            }
+        });
     }
 
     const installBtn = document.getElementById('install-btn');
