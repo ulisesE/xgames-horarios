@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.style.position = 'relative';
             container.appendChild(overlay);
         }
-        
+        }
         const allBookings = await StorageService.getBookings();
         
         if (currentView === 'daily') {
