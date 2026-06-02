@@ -207,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Estado de Fechas
     let selectedDate = new Date();
     let currentWeekStart = getStartOfWeek(new Date());
+    let currentEditingBookingColor = '';
 
     function formatDate(date) {
         const d = new Date(date);
@@ -534,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        }
+        
         const allBookings = await StorageService.getBookings();
         
         if (currentView === 'daily') {
@@ -568,6 +569,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         block.classList.add('booking-rejected');
                     } else if (booking.status === 'blocked') {
                         block.className = 'booking-block booking-blocked';
+                    } else if (booking.status === 'approved') {
+                        if (booking.color) {
+                            block.classList.add(`neon-${booking.color}`);
+                        } else {
+                            const colorsList = ['magenta', 'cyan', 'yellow', 'green', 'orange', 'purple'];
+                            const nameToHash = booking.name || 'Invitado';
+                            const hash = nameToHash.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                            const assignedColor = colorsList[hash % colorsList.length];
+                            block.classList.add(`neon-${assignedColor}`);
+                        }
                     }
 
                     block.style.cssText = getBlockStyle(booking.duration);
@@ -633,6 +644,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             item.classList.add('pending-agenda');
                         } else if (booking.status === 'rejected') {
                             item.classList.add('rejected-agenda');
+                        } else if (booking.status === 'approved') {
+                            if (booking.color) {
+                                item.classList.add(`neon-${booking.color}`);
+                            } else {
+                                const colorsList = ['magenta', 'cyan', 'yellow', 'green', 'orange', 'purple'];
+                                const nameToHash = booking.name || 'Invitado';
+                                const hash = nameToHash.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                                const assignedColor = colorsList[hash % colorsList.length];
+                                item.classList.add(`neon-${assignedColor}`);
+                            }
                         }
                         
                         const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
@@ -695,6 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inputPaid.checked = !!existingBooking.paid;
             inputPhone.value = existingBooking.phone || '';
             inputBlocked.checked = existingBooking.status === 'blocked';
+            currentEditingBookingColor = existingBooking.color || '';
             
             // Forzar actualización del DOM para el estado del switch
             inputBlocked.dispatchEvent(new Event('change'));
@@ -751,6 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inputBlocked.checked = false;
             inputBlocked.dispatchEvent(new Event('change'));
             whatsappBtn.classList.add('hidden');
+            currentEditingBookingColor = '';
             
             document.getElementById('booking-duration').value = '30';
             inputPaid.checked = false;
@@ -801,7 +824,8 @@ document.addEventListener('DOMContentLoaded', () => {
             phone: inputPhone.value.trim(),
             duration: parseInt(duration),
             status: inputBlocked.checked ? 'blocked' : 'approved',
-            paid: inputPaid.checked
+            paid: inputPaid.checked,
+            color: currentEditingBookingColor
         };
 
         await StorageService.saveBooking(booking);
@@ -824,7 +848,8 @@ document.addEventListener('DOMContentLoaded', () => {
             phone: inputPhone.value.trim(),
             duration: parseInt(duration),
             status: 'approved',
-            paid: inputPaid.checked
+            paid: inputPaid.checked,
+            color: currentEditingBookingColor
         };
 
         await StorageService.saveBooking(booking);

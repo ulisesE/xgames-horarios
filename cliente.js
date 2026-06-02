@@ -193,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileNick = document.getElementById('profile-nick');
     const profileLevel = document.getElementById('profile-level');
     const profileSongs = document.getElementById('profile-songs');
+    const profileColor = document.getElementById('profile-color');
 
     // Player Card Modal
     const playerCardModal = document.getElementById('player-card-modal');
@@ -443,16 +444,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const duration = document.getElementById('client-booking-duration').value;
 
-        // Obtener teléfono/whatsapp del perfil del usuario logueado antes de enviar la reserva
+        // Obtener teléfono/whatsapp y color del perfil del usuario logueado antes de enviar la reserva
         let clientPhone = '';
+        let clientColor = '';
         try {
             const userRef = doc(db, 'users', AuthService.currentUser.username.toLowerCase());
             const userSnap = await getDoc(userRef);
             if (userSnap.exists()) {
                 clientPhone = userSnap.data().whatsapp || '';
+                clientColor = userSnap.data().color || '';
             }
         } catch (error) {
-            console.error("Error al obtener el número de WhatsApp del perfil del cliente:", error);
+            console.error("Error al obtener los datos del perfil del cliente:", error);
         }
 
         const booking = {
@@ -461,6 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
             date: clientDate.value,
             name: AuthService.currentUser.username, // Usa el nombre logueado
             phone: clientPhone, // Guardar el número del perfil del cliente
+            color: clientColor, // Guardar el color del perfil del cliente
             duration: parseInt(duration),
             status: 'pending', // ESTADO PENDIENTE
             userId: AuthService.currentUser.username
@@ -662,6 +666,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         block.classList.add('booking-rejected');
                     } else if (booking.status === 'blocked') {
                         block.className = 'booking-block booking-blocked';
+                    } else if (booking.status === 'approved') {
+                        if (booking.color) {
+                            block.classList.add(`neon-${booking.color}`);
+                        } else {
+                            const colorsList = ['magenta', 'cyan', 'yellow', 'green', 'orange', 'purple'];
+                            const nameToHash = booking.name || 'Invitado';
+                            const hash = nameToHash.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                            const assignedColor = colorsList[hash % colorsList.length];
+                            block.classList.add(`neon-${assignedColor}`);
+                        }
                     }
 
                     block.style.cssText = getBlockStyle(booking.duration);
@@ -730,6 +744,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             item.classList.add('pending-agenda');
                         } else if (booking.status === 'rejected') {
                             item.classList.add('rejected-agenda');
+                        } else if (booking.status === 'approved') {
+                            if (booking.color) {
+                                item.classList.add(`neon-${booking.color}`);
+                            } else {
+                                const colorsList = ['magenta', 'cyan', 'yellow', 'green', 'orange', 'purple'];
+                                const nameToHash = booking.name || 'Invitado';
+                                const hash = nameToHash.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                                const assignedColor = colorsList[hash % colorsList.length];
+                                item.classList.add(`neon-${assignedColor}`);
+                            }
                         }
                         
                         if (booking.status === 'approved') {
@@ -892,6 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileNick.value = data.nick || '';
                 profileLevel.value = data.level || '';
                 profileSongs.value = data.songs || '';
+                profileColor.value = data.color || '';
             }
         } catch (error) {
             console.error("Error loading profile", error);
@@ -910,6 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const level = profileLevel.value.trim();
         const whatsapp = profileWhatsapp.value.trim();
         const songs = profileSongs.value.trim();
+        const color = profileColor.value;
         
         try {
             const userRef = doc(db, 'users', AuthService.currentUser.username.toLowerCase());
@@ -922,7 +948,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 nick: nick,
                 level: level,
                 whatsapp: whatsapp,
-                songs: songs
+                songs: songs,
+                color: color
             };
             
             await setDoc(userRef, updatedProfile);

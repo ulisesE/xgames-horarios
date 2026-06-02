@@ -81,9 +81,10 @@ Al hacer clic en tu nombre de usuario en la cabecera (**Hola, [Usuario]**), se a
    * Si tienes solicitudes que aún están **Pendientes** y decidiste cancelar tus planes, verás un botón **Cancelar** que te permite eliminar la solicitud directamente sin depender del administrador.
 2. **Pestaña Perfil PIU (Perfil Arcade):** Aquí puedes configurar tu ficha de jugador ciberpunk:
     * **Teléfono / WhatsApp:** Tu número telefónico sin espacios ni símbolos (ej. `521234567890`). **¡Sincronización Automática!** Al registrar tu teléfono aquí, el sistema lo asociará automáticamente a cualquier nueva solicitud de reserva que realices, permitiendo al administrador contactarte e informarte sobre la aprobación de tus reservas sin que tengas que ingresarlo manualmente cada vez.
-   * **Nick Pump It Up:** Tu alias de jugador para mostrar en pantalla.
-   * **Nivel de Juego:** Tu nivel actual en el juego de ritmo (ej. *S18, D19*).
-   * **Canciones Favoritas:** Tus temas musicales favoritos de la Pump (ej. *Beethoven Virus, Conflict, Canon D*).
+    * **Nick Pump It Up:** Tu alias de jugador para mostrar en pantalla.
+    * **Nivel de Juego:** Tu nivel actual en el juego de ritmo (ej. *S18, D19*).
+    * **Canciones Favoritas:** Tus temas musicales favoritos de la Pump (ej. *Beethoven Virus, Conflict, Canon D*).
+    * **Color de Reserva Neón:** Elige tu color neón favorito (Magenta, Cian, Amarillo, Verde, Naranja, Púrpura). Al guardarlo, todas tus nuevas solicitudes de reserva aprobadas se pintarán de este color. Si no eliges ninguno (o dejas la opción por defecto), el sistema te asignará automáticamente un color fijo basado en tu nombre de usuario de forma determinista, evitando que tus reservas cambien de tonalidad de forma aleatoria al recargar la página.
 
 ### 🕹️ 2.5 Tarjeta Social / Ficha de Jugador Pública
 ¡Conoce a la comunidad de baile del local!

@@ -1407,4 +1407,55 @@ input[type="text"]:focus {
         padding: 15px;
     }
 }
+
+/* Custom neon colors for bookings */
+.booking-block.neon-magenta {
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.25), rgba(255, 0, 255, 0.65)) !important;
+    border-color: var(--neon-magenta) !important;
+    color: #fff !important;
+}
+.booking-block.neon-cyan {
+    background: linear-gradient(135deg, rgba(0, 243, 255, 0.25), rgba(0, 243, 255, 0.65)) !important;
+    border-color: var(--neon-cyan) !important;
+    color: #fff !important;
+}
+.booking-block.neon-yellow {
+    background: linear-gradient(135deg, rgba(255, 230, 0, 0.25), rgba(255, 230, 0, 0.65)) !important;
+    border-color: var(--neon-yellow) !important;
+    color: #000 !important;
+}
+.booking-block.neon-green {
+    background: linear-gradient(135deg, rgba(57, 255, 20, 0.25), rgba(57, 255, 20, 0.65)) !important;
+    border-color: #39ff14 !important;
+    color: #000 !important;
+}
+.booking-block.neon-orange {
+    background: linear-gradient(135deg, rgba(255, 110, 0, 0.25), rgba(255, 110, 0, 0.65)) !important;
+    border-color: #ff6e00 !important;
+    color: #fff !important;
+}
+.booking-block.neon-purple {
+    background: linear-gradient(135deg, rgba(188, 19, 254, 0.25), rgba(188, 19, 254, 0.65)) !important;
+    border-color: #bc13fe !important;
+    color: #fff !important;
+}
+
+/* Custom neon colors for agenda items */
+.agenda-item.neon-magenta { border-left: 4px solid var(--neon-magenta) !important; }
+.agenda-item.neon-magenta .agenda-info strong { color: var(--neon-magenta) !important; }
+
+.agenda-item.neon-cyan { border-left: 4px solid var(--neon-cyan) !important; }
+.agenda-item.neon-cyan .agenda-info strong { color: var(--neon-cyan) !important; }
+
+.agenda-item.neon-yellow { border-left: 4px solid var(--neon-yellow) !important; }
+.agenda-item.neon-yellow .agenda-info strong { color: var(--neon-yellow) !important; }
+
+.agenda-item.neon-green { border-left: 4px solid #39ff14 !important; }
+.agenda-item.neon-green .agenda-info strong { color: #39ff14 !important; }
+
+.agenda-item.neon-orange { border-left: 4px solid #ff6e00 !important; }
+.agenda-item.neon-orange .agenda-info strong { color: #ff6e00 !important; }
+
+.agenda-item.neon-purple { border-left: 4px solid #bc13fe !important; }
+.agenda-item.neon-purple .agenda-info strong { color: #bc13fe !important; }
 
