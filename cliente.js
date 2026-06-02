@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const machines = SettingsService.settings.machines || [];
         const cols = machines.length;
         
-        header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
+        header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
         header.innerHTML = `<div class="time-col-header">Hora</div>`;
         machines.forEach((m) => {
             const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const row = document.createElement('div');
                 row.className = 'schedule-row';
-                row.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, 1fr)`;
+                row.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
                 
                 const timeCell = document.createElement('div');
                 timeCell.className = 'time-cell';
@@ -596,34 +596,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closedReason && currentView === 'daily') {
             if (container) {
                 container.classList.add('closed-schedule');
-                const overlay = document.createElement('div');
-                overlay.id = 'closed-day-overlay';
-                overlay.style.cssText = `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: ${container.scrollWidth}px;
-                    height: ${container.scrollHeight}px;
-                    background: rgba(10, 10, 15, 0.85);
-                    backdrop-filter: blur(8px);
-                    z-index: 50;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    padding: 20px;
-                    box-sizing: border-box;
-                    text-align: center;
-                    border: 2px dashed var(--neon-red);
-                    border-radius: 8px;
-                `;
-                overlay.innerHTML = `
-                    <div class="neon-text-magenta" style="font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 15px var(--neon-red);">🔒 LOCAL CERRADO</div>
-                    <div class="neon-text-cyan" style="font-size: 1.3rem; max-width: 500px; line-height: 1.6; text-shadow: 0 0 10px var(--neon-cyan);">${closedReason}</div>
-                    <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;">Todas las máquinas se encuentran deshabilitadas por hoy.</div>
-                `;
-                container.style.position = 'relative';
-                container.appendChild(overlay);
+                const wrapper = container.querySelector('.grid-wrapper');
+                if (wrapper) {
+                    const overlay = document.createElement('div');
+                    overlay.id = 'closed-day-overlay';
+                    overlay.style.cssText = `
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(10, 10, 15, 0.85);
+                        backdrop-filter: blur(8px);
+                        z-index: 50;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 20px;
+                        box-sizing: border-box;
+                        text-align: center;
+                        border: 2px dashed var(--neon-red);
+                        border-radius: 8px;
+                    `;
+                    overlay.innerHTML = `
+                        <div class="neon-text-magenta" style="font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 15px var(--neon-red);">🔒 LOCAL CERRADO</div>
+                        <div class="neon-text-cyan" style="font-size: 1.3rem; max-width: 500px; line-height: 1.6; text-shadow: 0 0 10px var(--neon-cyan);">${closedReason}</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;">Todas las máquinas se encuentran deshabilitadas por hoy.</div>
+                    `;
+                    wrapper.appendChild(overlay);
+                }
             }
         }
         

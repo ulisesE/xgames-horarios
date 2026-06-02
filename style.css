@@ -1292,6 +1292,23 @@ input[type="text"]:focus {
     min-width: max-content !important;
 }
 
+/* Wrapper unificado para asegurar alineación perfecta de columnas */
+.grid-wrapper {
+    position: relative;
+    min-width: max-content;
+    width: 100%;
+}
+
+/* Permitir saltos de línea automáticos en nombres largos de máquinas */
+.machine-header-name {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    margin-top: 5px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal; /* Asegurar que permita saltos de línea */
+}
+
 /* Deshabilitación de interacciones en agenda de días cerrados */
 .schedule-container.closed-schedule .machine-cell,
 .schedule-container.closed-schedule .cell-content,
