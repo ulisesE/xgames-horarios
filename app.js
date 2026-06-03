@@ -192,6 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const addClosedDayBtn = document.getElementById('add-closed-day-btn');
     let tempClosedDays = {};
     
+    // DOM elements and state for Deleted Machines (Recycle Bin)
+    const deletedMachinesListContainer = document.getElementById('deleted-machines-list-container');
+    let tempDeletedMachines = [];
+    
     // Help Modal elements
     const helpBtn = document.getElementById('help-btn');
     const helpModal = document.getElementById('help-modal');
@@ -940,8 +944,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('settings-logo-url').value = SettingsService.settings.logo || '';
         
         tempClosedDays = { ...(SettingsService.settings.closedDays || {}) };
+        tempDeletedMachines = [...(SettingsService.settings.deletedMachines || [])];
         renderClosedDaysList();
         renderMachinesListForSettings();
+        renderDeletedMachinesList();
         settingsModal.classList.remove('hidden');
     });
 
@@ -955,24 +961,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === settingsModal) closeSettings();
     });
 
-    addMachineBtn.addEventListener('click', () => {
-        const newId = Date.now().toString();
+    // Helper to render an active machine in the Settings list
+    function addActiveMachineToDOM(id, name, image) {
         const container = document.createElement('div');
         container.className = 'machine-setting-item';
-        container.dataset.id = newId;
+        container.dataset.id = id;
         container.innerHTML = `
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                <input type="text" class="machine-name-input" placeholder="Nombre Máquina" value="Nueva Máquina">
+                <input type="text" class="machine-name-input" placeholder="Nombre Máquina" value="${name}">
                 <button type="button" class="btn btn-danger btn-sm delete-machine-btn">🗑️</button>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <img class="machine-img-preview" src="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; display: none;">
-                <input type="url" class="machine-url-input" placeholder="URL de la imagen" style="flex:1; padding:0.5rem; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; border-radius:4px; font-size:0.8rem;">
+                <img class="machine-img-preview" src="${image || ''}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; ${image ? 'display:block;' : 'display:none;'}">
+                <input type="url" class="machine-url-input" placeholder="URL de la imagen" value="${image || ''}" style="flex:1; padding:0.5rem; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; border-radius:4px; font-size:0.8rem;">
             </div>
             <hr style="margin: 10px 0; border-color: #333;">
         `;
         
-        container.querySelector('.delete-machine-btn').addEventListener('click', () => container.remove());
+        container.querySelector('.delete-machine-btn').addEventListener('click', () => {
+            const currentName = container.querySelector('.machine-name-input').value.trim() || 'Nueva Máquina';
+            const currentImg = container.querySelector('.machine-url-input').value.trim() || '';
+            tempDeletedMachines.push({ id, name: currentName, image: currentImg });
+            container.remove();
+            renderDeletedMachinesList();
+        });
         
         container.querySelector('.machine-url-input').addEventListener('input', function() {
             const img = container.querySelector('.machine-img-preview');
@@ -981,36 +993,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         machinesListContainer.appendChild(container);
+    }
+
+    addMachineBtn.addEventListener('click', () => {
+        const newId = Date.now().toString();
+        addActiveMachineToDOM(newId, 'Nueva Máquina', '');
     });
 
     function renderMachinesListForSettings() {
         machinesListContainer.innerHTML = '';
         SettingsService.settings.machines.forEach(m => {
-            const container = document.createElement('div');
-            container.className = 'machine-setting-item';
-            container.dataset.id = m.id;
-            
-            container.innerHTML = `
-                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                    <input type="text" class="machine-name-input" placeholder="Nombre Máquina" value="${m.name}">
-                    <button type="button" class="btn btn-danger btn-sm delete-machine-btn">🗑️</button>
+            addActiveMachineToDOM(m.id, m.name, m.image);
+        });
+    }
+
+    function renderDeletedMachinesList() {
+        deletedMachinesListContainer.innerHTML = '';
+        if (tempDeletedMachines.length === 0) {
+            deletedMachinesListContainer.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 10px 0;">No hay máquinas en la papelera.</div>`;
+            return;
+        }
+
+        tempDeletedMachines.forEach((m, idx) => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 4px; border: 1px solid #222; font-size: 0.85rem; margin-bottom: 5px;';
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    ${m.image ? `<img src="${m.image}" style="width: 25px; height: 25px; object-fit: cover; border-radius: 4px;">` : '🕹️'}
+                    <span style="color: #ccc;">${m.name} <small style="color:var(--text-muted);">(${m.id})</small></span>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <img class="machine-img-preview" src="${m.image || ''}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px; ${m.image ? 'display:block;' : 'display:none;'}">
-                    <input type="url" class="machine-url-input" placeholder="URL de la imagen" value="${m.image || ''}" style="flex:1; padding:0.5rem; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; border-radius:4px; font-size:0.8rem;">
-                </div>
-                <hr style="margin: 10px 0; border-color: #333;">
+                <button type="button" class="btn btn-primary btn-sm restore-machine-btn" data-index="${idx}" style="padding: 2px 8px; font-size: 0.75rem; background: #00cc00; box-shadow: none;">♻️ Recuperar</button>
             `;
             
-            container.querySelector('.delete-machine-btn').addEventListener('click', () => container.remove());
-            
-            container.querySelector('.machine-url-input').addEventListener('input', function() {
-                const img = container.querySelector('.machine-img-preview');
-                img.src = this.value;
-                img.style.display = this.value ? 'block' : 'none';
+            item.querySelector('.restore-machine-btn').addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                const restoredMachine = tempDeletedMachines[index];
+                tempDeletedMachines.splice(index, 1);
+                addActiveMachineToDOM(restoredMachine.id, restoredMachine.name, restoredMachine.image);
+                renderDeletedMachinesList();
             });
-
-            machinesListContainer.appendChild(container);
+            
+            deletedMachinesListContainer.appendChild(item);
         });
     }
 
@@ -1080,7 +1103,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 logo: newLogoUrl,
                 motd: newMotd,
                 machines: newMachines,
-                closedDays: tempClosedDays
+                closedDays: tempClosedDays,
+                deletedMachines: tempDeletedMachines
             };
 
             await SettingsService.saveSettings(newSettings);
