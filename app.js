@@ -945,6 +945,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
         tempClosedDays = { ...(SettingsService.settings.closedDays || {}) };
         tempDeletedMachines = [...(SettingsService.settings.deletedMachines || [])];
+        
+        // Auto-detect orphan machine IDs from bookings (deleted before recycle bin was implemented)
+        const activeIds = new Set((SettingsService.settings.machines || []).map(m => m.id.toString()));
+        const deletedIds = new Set(tempDeletedMachines.map(m => m.id.toString()));
+        
+        const orphanIds = new Set();
+        StorageService.bookingsCache.forEach(b => {
+            if (b.machine) {
+                const mid = b.machine.toString();
+                if (!activeIds.has(mid) && !deletedIds.has(mid)) {
+                    orphanIds.add(mid);
+                }
+            }
+        });
+        
+        orphanIds.forEach(id => {
+            tempDeletedMachines.push({
+                id: id,
+                name: `Máquina Recuperada (${id})`,
+                image: ''
+            });
+        });
+
         renderClosedDaysList();
         renderMachinesListForSettings();
         renderDeletedMachinesList();
