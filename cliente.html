@@ -207,6 +207,18 @@
                             <input type="text" id="profile-level" placeholder="Ej. S16 o D18" autocomplete="off">
                         </div>
                         <div class="form-group">
+                            <label for="profile-league">Liga (Retas Potosinas)</label>
+                            <select id="profile-league" class="custom-select" style="width: 100%; padding: 0.8rem 1rem; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-family: 'Outfit'; font-size: 1rem;">
+                                <option value="D">Liga D</option>
+                                <option value="C">Liga C</option>
+                                <option value="B">Liga B</option>
+                                <option value="A">Liga A</option>
+                                <option value="S">Liga S</option>
+                                <option value="SS">Liga SS</option>
+                                <option value="SSS">Liga SSS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label for="profile-songs">Canciones Favoritas</label>
                             <input type="text" id="profile-songs" placeholder="Ej. Beethoven Virus, Canon D" autocomplete="off">
                         </div>
@@ -243,6 +255,7 @@
                     <div class="player-avatar">🕹️</div>
                     <div class="player-nick" id="card-nick">N/A</div>
                     <div class="player-level" id="card-level">Nivel N/A</div>
+                    <div class="player-league" id="card-league" style="font-weight: bold; margin-top: 5px; color: var(--neon-cyan);">Liga D</div>
                     
                     <div class="player-stats-grid">
                         <div class="player-stat-item">

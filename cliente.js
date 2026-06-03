@@ -194,12 +194,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileLevel = document.getElementById('profile-level');
     const profileSongs = document.getElementById('profile-songs');
     const profileColor = document.getElementById('profile-color');
+    const profileLeague = document.getElementById('profile-league');
 
     // Player Card Modal
     const playerCardModal = document.getElementById('player-card-modal');
     const closePlayerCardBtn = document.getElementById('close-player-card-btn');
     const cardNick = document.getElementById('card-nick');
     const cardLevel = document.getElementById('card-level');
+    const cardLeague = document.getElementById('card-league');
     const cardUsername = document.getElementById('card-username');
     const cardSongs = document.getElementById('card-songs');
 
@@ -915,6 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileWhatsapp.value = data.whatsapp || '';
                 profileNick.value = data.nick || '';
                 profileLevel.value = data.level || '';
+                profileLeague.value = data.league || 'D';
                 profileSongs.value = data.songs || '';
                 profileColor.value = data.color || '';
             }
@@ -933,6 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const nick = profileNick.value.trim();
         const level = profileLevel.value.trim();
+        const league = profileLeague.value;
         const whatsapp = profileWhatsapp.value.trim();
         const songs = profileSongs.value.trim();
         const color = profileColor.value;
@@ -947,6 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pin: currentPin,
                 nick: nick,
                 level: level,
+                league: league,
                 whatsapp: whatsapp,
                 songs: songs,
                 color: color
@@ -981,6 +986,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         cardNick.textContent = 'Cargando...';
         cardLevel.textContent = '';
+        cardLeague.textContent = '';
         cardUsername.textContent = userId;
         cardSongs.textContent = '';
         
@@ -993,11 +999,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = userSnap.data();
                 cardNick.textContent = data.nick || data.username || userId;
                 cardLevel.textContent = data.level ? `Nivel: ${data.level}` : 'Nivel no especificado';
+                cardLeague.textContent = data.league ? `Liga: ${data.league}` : 'Liga: D (Por defecto)';
                 cardUsername.textContent = data.username || userId;
                 cardSongs.textContent = data.songs || 'Ninguna registrada';
             } else {
                 cardNick.textContent = userId;
                 cardLevel.textContent = 'Sin perfil configurado';
+                cardLeague.textContent = 'Liga: D (Por defecto)';
                 cardSongs.textContent = 'Ninguna registrada';
             }
         } catch (error) {
