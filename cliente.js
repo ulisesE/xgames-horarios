@@ -1067,14 +1067,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             setTimeout(() => {
                                 versionBtn.textContent = 'Al día ✓';
                                 setTimeout(() => {
-                                    versionBtn.textContent = 'v5.1 🔄';
+                                    versionBtn.textContent = 'v5.2 🔄';
                                 }, 2000);
                             }, 1000);
                         }).catch(err => {
                             console.error('Error al actualizar Service Worker:', err);
                             versionBtn.textContent = 'Error ❌';
                             setTimeout(() => {
-                                versionBtn.textContent = 'v5.1 🔄';
+                                versionBtn.textContent = 'v5.2 🔄';
                             }, 2000);
                         });
                     } else {
