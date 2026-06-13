@@ -35,6 +35,9 @@ function getTimesForDuration(startTime, duration) {
 }
 
 
+let settingsLoaded = false;
+let bookingsLoaded = false;
+
 /**
  * Settings Service
  */
@@ -49,11 +52,19 @@ const SettingsService = {
         const docRef = doc(db, 'settings', 'global');
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
-                this.settings = docSnap.data();
+                const data = docSnap.data();
+                this.settings = {
+                    logo: data.logo || '',
+                    motd: data.motd || '',
+                    machines: data.machines || [],
+                    closedDays: data.closedDays || {},
+                    deletedMachines: data.deletedMachines || []
+                };
             } else {
                 // Initialize if not exists
                 this.saveSettings(this.settings);
             }
+            settingsLoaded = true;
             callback();
         });
     },
@@ -108,6 +119,7 @@ const StorageService = {
             snapshot.forEach((doc) => {
                 this.bookingsCache.push({ id: doc.id, ...doc.data() });
             });
+            bookingsLoaded = true;
             callback();
         });
     },
@@ -396,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const machines = SettingsService.settings.machines || [];
         const cols = machines.length;
         
-        header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
+        header.style.gridTemplateColumns = `var(--time-col-width) repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
         
         header.innerHTML = `<div class="time-col-header">Hora</div>`;
         machines.forEach((m, index) => {
@@ -415,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const row = document.createElement('div');
                 row.className = 'schedule-row';
-                row.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
+                row.style.gridTemplateColumns = `var(--time-col-width) repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
                 
                 const timeCell = document.createElement('div');
                 timeCell.className = 'time-cell';
@@ -482,7 +494,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function getMachineName(id) {
-        const m = SettingsService.settings.machines.find(x => x.id == id);
+        const machines = SettingsService.settings.machines || [];
+        const deletedMachines = SettingsService.settings.deletedMachines || [];
+        const m = machines.find(x => x.id == id) || deletedMachines.find(x => x.id == id);
         return m ? m.name : `Máquina ${id}`;
     }
 
@@ -708,7 +722,8 @@ document.addEventListener('DOMContentLoaded', () => {
         displayMachine.textContent = mName;
         displayTime.textContent = time + ' | ' + date;
         
-        const machinesOptions = SettingsService.settings.machines.map(m => 
+        const machines = SettingsService.settings.machines || [];
+        const machinesOptions = machines.map(m => 
             `<option value="${m.id}" ${m.id == machineId ? 'selected' : ''}>${m.name}</option>`
         ).join('');
 
@@ -940,6 +955,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // SETTINGS MODAL LOGIC
     // ==========================================
     settingsBtn.addEventListener('click', () => {
+        if (!settingsLoaded || !bookingsLoaded) {
+            alert("Los ajustes y reservas aún se están cargando de la base de datos. Por favor, espera un momento.");
+            return;
+        }
         document.getElementById('settings-motd').value = SettingsService.settings.motd || '';
         document.getElementById('settings-logo-url').value = SettingsService.settings.logo || '';
         
