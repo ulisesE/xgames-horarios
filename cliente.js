@@ -1054,6 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('No se pudo copiar la dirección automáticamente.');
             });
         });
+    }
     // Actualización manual de la App
     const versionBtn = document.getElementById('app-version');
     if (versionBtn) {
