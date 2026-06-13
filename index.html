@@ -40,7 +40,7 @@
                         <span class="neon-text-cyan">GAMES</span>
                         <span class="neon-text-yellow">BARCADE</span>
                     </div>
-                    <span class="app-version-btn" id="app-version" title="Buscar Actualizaciones">v5.1 🔄</span>
+                    <span class="app-version-btn" id="app-version" title="Buscar Actualizaciones">v5.2 🔄</span>
                 </div>
                 <div class="header-actions">
                     <span id="current-date" class="date-display"></span>
@@ -276,6 +276,17 @@
 
                 <!-- Contenido Changelog -->
                 <div id="tab-changelog-content" class="tab-content hidden" style="text-align: left;">
+                    <div class="settings-section" style="border-left: 3px solid var(--neon-cyan);">
+                        <h4 style="color: var(--neon-cyan); margin-bottom: 5px;">⚡ VERSIÓN 5.2 (Junio 2026) - Mejoras Visuales Móviles & Estabilidad</h4>
+                        <ul style="margin-left: 20px; font-size: 0.9rem;">
+                            <li><strong>Optimización de Cuadrícula:</strong> Ajustado el ancho mínimo de las columnas en móvil de 140px a 70px, eliminando el scroll horizontal innecesario para locales de 3 o 4 máquinas.</li>
+                            <li><strong>Desplazamiento Natural:</strong> Removido el scroll interno del grid y configurado el scroll normal de la página para una navegación móvil nativa y fluida. Cabeceras reposicionadas correctamente al inicio del grid.</li>
+                            <li><strong>Dirección Mejorada:</strong> El pie de página mantiene la alineación a la izquierda para el pin en móvil y añade botones directos para Abrir en Google Maps y Copiar Dirección.</li>
+                            <li><strong>Prevención de Pérdida de Datos:</strong> Añadidas banderas de carga en ajustes y reservas para impedir la sobreescritura accidental de máquinas por demoras en la conexión de Firebase.</li>
+                            <li><strong>Actualización Manual:</strong> Añadido botón de actualización en la cabecera (v5.2) con reintento y reinicio automatizado del Service Worker.</li>
+                        </ul>
+                    </div>
+
                     <div class="settings-section" style="border-left: 3px solid #00f3ff;">
                         <h4 style="color: #00f3ff; margin-bottom: 5px;">⚡ VERSIÓN 5.1 (Junio 2026) - Papelera de Reciclaje de Máquinas</h4>
                         <ul style="margin-left: 20px; font-size: 0.9rem;">
