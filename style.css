@@ -1462,6 +1462,21 @@ input[type="text"]:focus {
     }
 }
 
+.app-version-btn {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    transition: color var(--transition-fast), text-shadow var(--transition-fast);
+}
+
+.app-version-btn:hover {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+}
+
 /* Custom neon colors for bookings */
 .booking-block.neon-magenta {
     background: linear-gradient(135deg, rgba(255, 0, 255, 0.25), rgba(255, 0, 255, 0.65)) !important;

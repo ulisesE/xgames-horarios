@@ -1207,6 +1207,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // Actualización manual de la App
+    const versionBtn = document.getElementById('app-version');
+    if (versionBtn) {
+        versionBtn.addEventListener('click', () => {
+            versionBtn.textContent = 'Buscando... 🔄';
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(reg => {
+                    if (reg) {
+                        reg.update().then(() => {
+                            setTimeout(() => {
+                                versionBtn.textContent = 'Al día ✓';
+                                setTimeout(() => {
+                                    versionBtn.textContent = 'v5.1 🔄';
+                                }, 2000);
+                            }, 1000);
+                        }).catch(err => {
+                            console.error('Error al actualizar Service Worker:', err);
+                            versionBtn.textContent = 'Error ❌';
+                            setTimeout(() => {
+                                versionBtn.textContent = 'v5.1 🔄';
+                            }, 2000);
+                        });
+                    } else {
+                        window.location.reload(true);
+                    }
+                }).catch(() => {
+                    window.location.reload(true);
+                });
+            } else {
+                window.location.reload(true);
+            }
+        });
+    }
+
     initPWA();
 });
 
