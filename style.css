@@ -18,6 +18,9 @@
     --border-color: #2a2a4a;
     --border-radius: 8px;
     --transition-fast: 0.2s ease;
+
+    --header-height: 74px;
+    --time-col-width: 80px;
 }
 
 * {
@@ -57,7 +60,7 @@ body {
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 /* Header */
@@ -90,10 +93,7 @@ body {
 }
 
 .date-display {
-    font-weight: 600;
-    color: var(--neon-cyan);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    display: none;
 }
 
 /* Botones */
@@ -217,7 +217,6 @@ body {
 /* Grid Principal */
 .main-content {
     flex: 1;
-    overflow-y: auto;
     padding: 1rem;
 }
 
@@ -276,11 +275,11 @@ body {
 
 .schedule-header {
     display: grid;
-    grid-template-columns: 80px 1fr 1fr 1fr;
+    grid-template-columns: var(--time-col-width) 1fr 1fr 1fr;
     background-color: rgba(15, 15, 27, 0.95);
     border-bottom: 2px solid var(--border-color);
     position: sticky;
-    top: 0;
+    top: var(--header-height);
     z-index: 10;
 }
 
@@ -293,7 +292,7 @@ body {
     border-right: 1px solid var(--border-color);
     position: sticky;
     left: 0;
-    top: 0;
+    top: var(--header-height);
     z-index: 20;
     background-color: #111122;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.4);
@@ -332,7 +331,7 @@ body {
 /* Filas de Horario */
 .schedule-row {
     display: grid;
-    grid-template-columns: 80px 1fr 1fr 1fr;
+    grid-template-columns: var(--time-col-width) 1fr 1fr 1fr;
     border-bottom: 1px solid var(--border-color);
     transition: background-color var(--transition-fast);
 }
@@ -373,6 +372,37 @@ body {
 
 .machine-cell:last-child {
     border-right: none;
+}
+
+@media (max-width: 768px) {
+    :root {
+        --header-height: 128px;
+        --time-col-width: 60px;
+    }
+    .machine-header, .machine-cell {
+        min-width: 70px;
+    }
+    .machine-header {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.1rem;
+    }
+    .machine-header-img {
+        width: 30px;
+        height: 30px;
+    }
+    .booking-name {
+        font-size: 0.7rem;
+    }
+    .booking-duration {
+        font-size: 0.6rem;
+    }
+    .booking-block {
+        padding: 0.2rem;
+    }
+    .time-cell {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.2rem;
+    }
 }
 
 @media (min-width: 769px) {
@@ -710,6 +740,9 @@ input[type="text"]:focus {
 
 /* Responsive */
 @media (max-width: 992px) {
+    :root {
+        --header-height: 112px;
+    }
     .header {
         padding: 0.8rem 1rem;
     }
@@ -737,13 +770,7 @@ input[type="text"]:focus {
     }
 
     .date-display {
-        width: 100%;
-        text-align: center;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
-        color: var(--neon-cyan);
-        opacity: 0.9;
+        display: none;
     }
 
     .header-actions .btn {
@@ -1289,13 +1316,13 @@ input[type="text"]:focus {
 
 /* Corrección para desalineación en scroll horizontal de cuadrículas */
 .schedule-header, .schedule-row {
-    min-width: max-content !important;
+    min-width: 100% !important;
 }
 
 /* Wrapper unificado para asegurar alineación perfecta de columnas */
 .grid-wrapper {
     position: relative;
-    min-width: max-content;
+    min-width: 100%;
     width: 100%;
 }
 
@@ -1402,9 +1429,36 @@ input[type="text"]:focus {
 
 @media (max-width: 768px) {
     .location-card {
+        padding: 12px 15px;
+    }
+}
+
+.location-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.location-btn {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 500px) {
+    .location-actions {
         flex-direction: column;
-        text-align: center;
-        padding: 15px;
+        gap: 8px;
+        width: 100%;
+    }
+    .location-btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 

@@ -49,7 +49,14 @@ const SettingsService = {
         const docRef = doc(db, 'settings', 'global');
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
-                this.settings = docSnap.data();
+                const data = docSnap.data();
+                this.settings = {
+                    logo: data.logo || '',
+                    motd: data.motd || '',
+                    machines: data.machines || [],
+                    closedDays: data.closedDays || {},
+                    deletedMachines: data.deletedMachines || []
+                };
             }
             callback();
         });
@@ -411,7 +418,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getMachineName(id) {
         const machines = SettingsService.settings.machines || [];
-        const m = machines.find(x => x.id == id);
+        const deletedMachines = SettingsService.settings.deletedMachines || [];
+        const m = machines.find(x => x.id == id) || deletedMachines.find(x => x.id == id);
         return m ? m.name : `Máquina ${id}`;
     }
 
@@ -493,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const machines = SettingsService.settings.machines || [];
         const cols = machines.length;
         
-        header.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
+        header.style.gridTemplateColumns = `var(--time-col-width) repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
         header.innerHTML = `<div class="time-col-header">Hora</div>`;
         machines.forEach((m) => {
             const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
@@ -511,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const row = document.createElement('div');
                 row.className = 'schedule-row';
-                row.style.gridTemplateColumns = `80px repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
+                row.style.gridTemplateColumns = `var(--time-col-width) repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
                 
                 const timeCell = document.createElement('div');
                 timeCell.className = 'time-cell';
@@ -1025,6 +1033,28 @@ document.addEventListener('DOMContentLoaded', () => {
     playerCardModal.addEventListener('click', (e) => {
         if (e.target === playerCardModal) playerCardModal.classList.add('hidden');
     });
+
+    // Copiar dirección al portapapeles
+    const copyAddressBtn = document.getElementById('copy-address-btn');
+    if (copyAddressBtn) {
+        copyAddressBtn.addEventListener('click', () => {
+            const addressText = document.getElementById('location-address-text').textContent.trim();
+            navigator.clipboard.writeText(addressText).then(() => {
+                const originalHTML = copyAddressBtn.innerHTML;
+                copyAddressBtn.innerHTML = '✅ ¡Copiado!';
+                copyAddressBtn.style.borderColor = '#00ffcc';
+                copyAddressBtn.style.color = '#00ffcc';
+                setTimeout(() => {
+                    copyAddressBtn.innerHTML = originalHTML;
+                    copyAddressBtn.style.borderColor = '';
+                    copyAddressBtn.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar dirección: ', err);
+                alert('No se pudo copiar la dirección automáticamente.');
+            });
+        });
+    }
 
     initPWA();
 });
