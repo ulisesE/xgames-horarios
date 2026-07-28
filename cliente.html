@@ -20,15 +20,18 @@
     <div class="app-container">
         <header class="header">
             <div class="header-content">
-                <div class="logo">
-                    <span class="neon-text-magenta">X</span>
-                    <span class="neon-text-cyan">GAMES</span>
-                    <span class="neon-text-yellow">BARCADE</span>
+                <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+                    <div class="logo">
+                        <span class="neon-text-magenta">X</span>
+                        <span class="neon-text-cyan">GAMES</span>
+                        <span class="neon-text-yellow">BARCADE</span>
+                    </div>
+                    <span class="app-version-btn" id="app-version" title="Buscar Actualizaciones">v5.2 🔄</span>
                 </div>
                 <div class="header-actions">
                     <span id="current-date" class="date-display"></span>
                     <button id="login-btn" class="btn btn-primary" title="Iniciar Sesión">Ingresar</button>
-                    <span id="user-display" class="neon-text-cyan hidden" style="font-weight: bold; margin-right: 10px;"></span>
+                    <span id="user-display" class="neon-text-cyan hidden" style="font-weight: bold; margin-right: 10px; cursor: pointer; text-decoration: underline;" title="Ver Mi Cuenta"></span>
                     <button id="logout-btn" class="btn btn-outline hidden" title="Cerrar Sesión">Salir</button>
                     <button id="zoom-btn" class="btn btn-outline" title="Comprimir Vista">🔍</button>
                     <button id="install-btn" class="btn btn-outline" style="display: none;">Instalar App</button>
@@ -55,15 +58,40 @@
 
         <main class="main-content">
             <div class="schedule-container" id="schedule-container-main">
-                <div class="schedule-header" id="schedule-header">
-                    <div class="time-col-header">Hora</div>
-                    <!-- Máquinas generadas dinámicamente -->
-                </div>
-                <div class="schedule-body" id="schedule-body">
-                    <!-- Filas generadas dinámicamente -->
+                <div class="grid-wrapper">
+                    <div class="schedule-header" id="schedule-header">
+                        <div class="time-col-header">Hora</div>
+                        <!-- Máquinas generadas dinámicamente -->
+                    </div>
+                    <div class="schedule-body" id="schedule-body">
+                        <!-- Filas generadas dinámicamente -->
+                    </div>
                 </div>
             </div>
         </main>
+        
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="location-card">
+                    <div class="location-icon">📍</div>
+                    <div class="location-details">
+                        <span class="location-title">Dirección de la Sucursal</span>
+                        <span class="location-address" id="location-address-text">Jorge Jiménez Cantú 33, Ejidos de San Agustin, 56344 Cdad. Nezahualcóyotl, Méx.</span>
+                        <div class="location-actions">
+                            <a href="https://maps.google.com/?q=Jorge+Jim%C3%A9nez+Cant%C3%BA+33,+Ejidos+de+San+Agustin,+56344+Cdad.+Nezahualc%C3%B3yotl,+M%C3%A9x." target="_blank" class="btn btn-outline location-btn" id="open-maps-btn">
+                                🗺️ Abrir en Maps
+                            </a>
+                            <button type="button" class="btn btn-outline location-btn" id="copy-address-btn">
+                                📋 Copiar Dirección
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-tagline">
+                    XGAMES BARCADE &copy; 2026. Todos los derechos reservados.
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- Modal MOTD (Message of the Day) -->
@@ -148,6 +176,107 @@
                         <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mi Cuenta -->
+    <div id="my-account-modal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>Mi Cuenta Arcade</h2>
+                <button id="close-account-btn" class="icon-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 10px;">
+                <div class="tab-container">
+                    <button type="button" id="tab-bookings-btn" class="tab-btn active">Reservas</button>
+                    <button type="button" id="tab-profile-btn" class="tab-btn">Perfil PIU</button>
+                </div>
+
+                <!-- Pestaña Reservas -->
+                <div id="tab-bookings-content" class="tab-content">
+                    <div class="user-bookings-list" id="user-bookings-list">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Pestaña Perfil -->
+                <div id="tab-profile-content" class="tab-content hidden">
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label for="profile-whatsapp">Teléfono / WhatsApp</label>
+                            <input type="text" id="profile-whatsapp" placeholder="Ej. 521234567890 (para notificaciones)" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-nick">Nick Pump It Up</label>
+                            <input type="text" id="profile-nick" placeholder="Ej. CARLOS_PIU" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-level">Nivel de Juego (S / D)</label>
+                            <input type="text" id="profile-level" placeholder="Ej. S16 o D18" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-league">Liga (Retas Potosinas)</label>
+                            <select id="profile-league" class="custom-select" style="width: 100%; padding: 0.8rem 1rem; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-family: 'Outfit'; font-size: 1rem;">
+                                <option value="D">Liga D</option>
+                                <option value="C">Liga C</option>
+                                <option value="B">Liga B</option>
+                                <option value="A">Liga A</option>
+                                <option value="S">Liga S</option>
+                                <option value="SS">Liga SS</option>
+                                <option value="SSS">Liga SSS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-songs">Canciones Favoritas</label>
+                            <input type="text" id="profile-songs" placeholder="Ej. Beethoven Virus, Canon D" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-color">Color de Reserva Neón</label>
+                            <select id="profile-color" class="custom-select">
+                                <option value="">Aleatorio / Por defecto 🎲</option>
+                                <option value="magenta">Magenta Neón 💖</option>
+                                <option value="cyan">Cian Neón 💙</option>
+                                <option value="yellow">Amarillo Neón 💛</option>
+                                <option value="green">Verde Neón 💚</option>
+                                <option value="orange">Naranja Neón 🧡</option>
+                                <option value="purple">Púrpura Neón 💜</option>
+                            </select>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Guardar Perfil</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ficha de Jugador (Social Card) -->
+    <div id="player-card-modal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 380px;">
+            <div class="modal-header">
+                <h2>Ficha de Jugador</h2>
+                <button id="close-player-card-btn" class="icon-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="player-card">
+                    <div class="player-avatar">🕹️</div>
+                    <div class="player-nick" id="card-nick">N/A</div>
+                    <div class="player-level" id="card-level">Nivel N/A</div>
+                    <div class="player-league" id="card-league" style="font-weight: bold; margin-top: 5px; color: var(--neon-cyan);">Liga D</div>
+                    
+                    <div class="player-stats-grid">
+                        <div class="player-stat-item">
+                            <span class="player-stat-title">Usuario Registrado</span>
+                            <span class="player-stat-desc" id="card-username">Invitado</span>
+                        </div>
+                        <div class="player-stat-item">
+                            <span class="player-stat-title">Canciones Favoritas</span>
+                            <span class="player-stat-desc" id="card-songs">Ninguna registrada</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
