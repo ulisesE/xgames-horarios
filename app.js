@@ -38,6 +38,19 @@ function getTimesForDuration(startTime, duration) {
 let settingsLoaded = false;
 let bookingsLoaded = false;
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
+
 /**
  * Settings Service
  */
@@ -386,7 +399,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateUIFromSettings() {
         if (SettingsService.settings.logo) {
-            headerLogo.innerHTML = `<img src="${SettingsService.settings.logo}" alt="Logo" style="max-height: 40px;">`;
+            headerLogo.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = SettingsService.settings.logo;
+            img.alt = 'Logo';
+            img.style.maxHeight = '40px';
+            headerLogo.appendChild(img);
         } else {
             headerLogo.innerHTML = `
                 <span class="neon-text-magenta">X</span>
@@ -412,11 +430,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         header.innerHTML = `<div class="time-col-header">Hora</div>`;
         machines.forEach((m, index) => {
-            const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
+            const imgHtml = m.image ? `<img src="${escapeHTML(m.image)}" class="machine-header-img" alt="${escapeHTML(m.name)}">` : '';
             header.innerHTML += `
-                <div class="machine-header" data-machine="${m.id}">
+                <div class="machine-header" data-machine="${escapeHTML(m.id)}">
                     ${imgHtml}
-                    <div class="machine-header-name">${m.name}</div>
+                    <div class="machine-header-name">${escapeHTML(m.name)}</div>
                 </div>
             `;
         });
@@ -605,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const lockIcon = booking.status === 'blocked' ? '🔒 ' : '';
                     
                     block.innerHTML = `
-                        <div class="booking-name">${lockIcon}${paidIcon}${booking.name}</div>
+                        <div class="booking-name">${lockIcon}${paidIcon}${escapeHTML(booking.name)}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
@@ -677,9 +695,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const paidIcon = booking.paid ? '<span title="Pagado">💰</span> ' : '';
                         
                         item.innerHTML = `
-                            <div class="agenda-time">🕒 ${booking.time}</div>
+                            <div class="agenda-time">🕒 ${escapeHTML(booking.time)}</div>
                             <div class="agenda-info">
-                                <strong>[${mName}]</strong> ${paidIcon}${booking.name} 
+                                <strong>[${escapeHTML(mName)}]</strong> ${paidIcon}${escapeHTML(booking.name)} 
                                 <span class="agenda-duration">(${booking.duration} min)</span>
                             </div>
                         `;
@@ -724,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const machines = SettingsService.settings.machines || [];
         const machinesOptions = machines.map(m => 
-            `<option value="${m.id}" ${m.id == machineId ? 'selected' : ''}>${m.name}</option>`
+            `<option value="${escapeHTML(m.id)}" ${m.id == machineId ? 'selected' : ''}>${escapeHTML(m.name)}</option>`
         ).join('');
 
         if (existingBooking) {
@@ -812,7 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     inputMachine.value = e.target.value;
                 });
             } else {
-                 displayMachine.innerHTML = `<div class="info-text neon-text-cyan">${mName}</div>`;
+                 displayMachine.innerHTML = `<div class="info-text neon-text-cyan">${escapeHTML(mName)}</div>`;
             }
         }
 

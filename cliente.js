@@ -35,6 +35,19 @@ function getTimesForDuration(startTime, duration) {
 }
 
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
+
 /**
  * Settings Service
  */
@@ -388,7 +401,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateUIFromSettings() {
         if (SettingsService.settings.logo) {
-            headerLogo.innerHTML = `<img src="${SettingsService.settings.logo}" alt="Logo" style="max-height: 40px;">`;
+            headerLogo.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = SettingsService.settings.logo;
+            img.alt = 'Logo';
+            img.style.maxHeight = '40px';
+            headerLogo.appendChild(img);
         } else {
             headerLogo.innerHTML = `
                 <span class="neon-text-magenta">X</span>
@@ -435,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clientDate.value = date;
 
         const mName = getMachineName(machineId);
-        clientDisplayMachine.innerHTML = `<div class="info-text neon-text-cyan">${mName}</div>`;
+        clientDisplayMachine.innerHTML = `<div class="info-text neon-text-cyan">${escapeHTML(mName)}</div>`;
         clientDisplayTime.textContent = time + ' | ' + date;
 
         clientBookingModal.classList.remove('hidden');
@@ -504,11 +522,11 @@ document.addEventListener('DOMContentLoaded', () => {
         header.style.gridTemplateColumns = `var(--time-col-width) repeat(${cols > 0 ? cols : 1}, minmax(0, 1fr))`;
         header.innerHTML = `<div class="time-col-header">Hora</div>`;
         machines.forEach((m) => {
-            const imgHtml = m.image ? `<img src="${m.image}" class="machine-header-img" alt="${m.name}">` : '';
+            const imgHtml = m.image ? `<img src="${escapeHTML(m.image)}" class="machine-header-img" alt="${escapeHTML(m.name)}">` : '';
             header.innerHTML += `
-                <div class="machine-header" data-machine="${m.id}">
+                <div class="machine-header" data-machine="${escapeHTML(m.id)}">
                     ${imgHtml}
-                    <div class="machine-header-name">${m.name}</div>
+                    <div class="machine-header-name">${escapeHTML(m.name)}</div>
                 </div>
             `;
         });
@@ -702,7 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const lockIcon = booking.status === 'blocked' ? '🔒 ' : '';
                     block.innerHTML = `
-                        <div class="booking-name">${lockIcon}${booking.name}</div>
+                        <div class="booking-name">${lockIcon}${escapeHTML(booking.name)}</div>
                         <div class="booking-duration">${booking.duration} min</div>
                     `;
 
@@ -777,9 +795,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         
                         item.innerHTML = `
-                            <div class="agenda-time">🕒 ${booking.time}</div>
+                            <div class="agenda-time">🕒 ${escapeHTML(booking.time)}</div>
                             <div class="agenda-info">
-                                <strong>[${mName}]</strong> ${booking.name} 
+                                <strong>[${escapeHTML(mName)}]</strong> ${escapeHTML(booking.name)} 
                                 <span class="agenda-duration">(${booking.duration} min)</span>
                             </div>
                         `;
