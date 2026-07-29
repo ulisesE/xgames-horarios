@@ -1217,26 +1217,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (reg) {
                         reg.update().then(() => {
                             setTimeout(() => {
-                                versionBtn.textContent = 'Al día ✓';
-                                setTimeout(() => {
-                                    versionBtn.textContent = 'v5.2 🔄';
-                                }, 2000);
+                                if (reg.waiting || reg.installing) {
+                                    versionBtn.textContent = 'Actualizando... ⚡';
+                                } else {
+                                    versionBtn.textContent = 'Al día ✓';
+                                    setTimeout(() => {
+                                        versionBtn.textContent = 'v5.3 🔄';
+                                    }, 2000);
+                                }
                             }, 1000);
                         }).catch(err => {
                             console.error('Error al actualizar Service Worker:', err);
                             versionBtn.textContent = 'Error ❌';
                             setTimeout(() => {
-                                versionBtn.textContent = 'v5.2 🔄';
+                                versionBtn.textContent = 'v5.3 🔄';
                             }, 2000);
                         });
                     } else {
-                        window.location.reload(true);
+                        window.location.reload();
                     }
                 }).catch(() => {
-                    window.location.reload(true);
+                    window.location.reload();
                 });
             } else {
-                window.location.reload(true);
+                window.location.reload();
             }
         });
     }
@@ -1248,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let deferredPrompt;
 function initPWA() {
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
             .catch(err => console.log('Error SW:', err));
 
         // Escucha cambios del Service Worker para forzar actualización de caché y recargar

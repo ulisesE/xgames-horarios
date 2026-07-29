@@ -40,7 +40,7 @@
                         <span class="neon-text-cyan">GAMES</span>
                         <span class="neon-text-yellow">BARCADE</span>
                     </div>
-                    <span class="app-version-btn" id="app-version" title="Buscar Actualizaciones">v5.2 🔄</span>
+                    <span class="app-version-btn" id="app-version" title="Buscar Actualizaciones">v5.3 🔄</span>
                 </div>
                 <div class="header-actions">
                     <span id="current-date" class="date-display"></span>
@@ -276,6 +276,14 @@
 
                 <!-- Contenido Changelog -->
                 <div id="tab-changelog-content" class="tab-content hidden" style="text-align: left;">
+                    <div class="settings-section" style="border-left: 3px solid var(--neon-magenta);">
+                        <h4 style="color: var(--neon-magenta); margin-bottom: 5px;">⚡ VERSIÓN 5.3 (Junio 2026) - Optimización de Actualización y Caché</h4>
+                        <ul style="margin-left: 20px; font-size: 0.9rem;">
+                            <li><strong>Actualización Forzada:</strong> Configurado el registro del Service Worker con <code>updateViaCache: 'none'</code> para forzar la consulta directa a red e ignorar la caché HTTP en la comprobación de cambios de código.</li>
+                            <li><strong>Flujo Manual Mejorado:</strong> El botón de versión busca activamente el estado de instalación o de espera y agiliza el reinicio cuando se detecta código nuevo.</li>
+                        </ul>
+                    </div>
+
                     <div class="settings-section" style="border-left: 3px solid var(--neon-cyan);">
                         <h4 style="color: var(--neon-cyan); margin-bottom: 5px;">⚡ VERSIÓN 5.2 (Junio 2026) - Mejoras Visuales Móviles & Estabilidad</h4>
                         <ul style="margin-left: 20px; font-size: 0.9rem;">
